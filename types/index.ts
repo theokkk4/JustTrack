@@ -6,6 +6,8 @@ export type WeightUnit = 'lb' | 'kg';
 export type HeightUnit = 'ft_in' | 'cm';
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
 export type WeightGoal = 'lose' | 'maintain' | 'gain';
+/** Only used for the BMR estimate; "unspecified" is always an option. */
+export type Sex = 'male' | 'female' | 'unspecified';
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
 export type FoodSource = 'fatsecret' | 'custom' | 'ai_estimate';
 
@@ -13,18 +15,13 @@ export interface Profile {
   id: UUID;
   displayName: string | null;
   avatarUrl: string | null;
+  sex: Sex | null;
+  birthYear: number | null;
+  heightCm: number | null;
+  activityLevel: ActivityLevel | null;
+  weightGoal: WeightGoal | null;
+  onboardingCompletedAt: ISODateString | null;
   createdAt: ISODateString;
-}
-
-export interface NutritionGoals {
-  id: UUID;
-  userId: UUID;
-  calorieGoal: number;
-  proteinGoal: number;
-  carbsGoal: number;
-  fatGoal: number;
-  createdAt: ISODateString;
-  updatedAt: ISODateString;
 }
 
 export interface NutritionValues {
@@ -32,6 +29,14 @@ export interface NutritionValues {
   protein: number;
   carbs: number;
   fat: number;
+}
+
+/** A user's daily targets: calories in kcal, macros in grams. */
+export interface NutritionGoals extends NutritionValues {
+  id: UUID;
+  userId: UUID;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
 }
 
 export interface Meal {

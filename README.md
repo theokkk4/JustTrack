@@ -4,7 +4,7 @@
 
 JustTrack is a free, open-source calorie and macro tracker for iPhone, built for speed: open the app, scan or search, confirm, done. No ads, no subscriptions, no analytics.
 
-> **Status:** early development. The app shell, design system, and navigation are in place; accounts, food search, and scanning are being built next.
+> **Status:** early development. Accounts (email + Sign in with Apple), onboarding with personalized calorie targets, and the secured database are in place; food search and scanning are being built next.
 
 ## Stack
 

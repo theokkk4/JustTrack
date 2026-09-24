@@ -1,7 +1,9 @@
 import { DEFAULT_GOALS } from '@/constants/nutrition';
+import { useAuth } from '@/contexts/AuthContext';
 import type { NutritionValues } from '@/types';
 
-/** The active daily targets. Falls back to FDA reference values until the user sets personal goals. */
+/** The user's daily targets, falling back to FDA reference values if none are saved yet. */
 export function useNutritionGoals(): NutritionValues {
-  return DEFAULT_GOALS;
+  const { goals } = useAuth();
+  return goals ?? DEFAULT_GOALS;
 }

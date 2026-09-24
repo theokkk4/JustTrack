@@ -27,6 +27,7 @@ export const AppIcons = {
 
   flame: { sf: 'flame.fill', ionicon: 'flame' },
   plus: { sf: 'plus', ionicon: 'add' },
+  minus: { sf: 'minus', ionicon: 'remove' },
   plusCircle: { sf: 'plus.circle.fill', ionicon: 'add-circle' },
   chevronRight: { sf: 'chevron.right', ionicon: 'chevron-forward' },
   chevronLeft: { sf: 'chevron.left', ionicon: 'chevron-back' },
@@ -61,6 +62,9 @@ export const AppIcons = {
   deleteAccount: { sf: 'person.crop.circle.badge.xmark', ionicon: 'person-remove-outline' },
   openSource: { sf: 'chevron.left.forwardslash.chevron.right', ionicon: 'code-slash-outline' },
   info: { sf: 'info.circle.fill', ionicon: 'information-circle-outline' },
+  mail: { sf: 'envelope.fill', ionicon: 'mail-outline' },
+  signOut: { sf: 'rectangle.portrait.and.arrow.right', ionicon: 'log-out-outline' },
+  wifiOff: { sf: 'wifi.slash', ionicon: 'cloud-offline-outline' },
   scale: { sf: 'scalemass.fill', ionicon: 'speedometer-outline' },
   seal: { sf: 'checkmark.seal.fill', ionicon: 'shield-checkmark' },
 } as const satisfies Record<string, IconSpec>;

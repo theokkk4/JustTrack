@@ -8,15 +8,16 @@
     "scheme": "justtrack",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.changeme.justtrack",
+      "bundleIdentifier": "com.theokkk4.justtrack",
       "icon": "./assets/justtrack.icon",
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
-      "package": "com.changeme.justtrack",
+      "package": "com.theokkk4.justtrack",
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -26,7 +27,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -38,7 +39,8 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 140
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,
