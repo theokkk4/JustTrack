@@ -75,6 +75,8 @@ function RootNavigator() {
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
           <Stack.Protected guard={ready}>
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="food" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="entry/[id]" options={{ presentation: 'modal', headerShown: true, title: 'Edit Entry' }} />
             <Stack.Screen
               name="settings/goals"
               options={{ headerShown: true, title: 'Nutrition Goals', headerBackTitle: 'Profile' }}

@@ -62,51 +62,78 @@ export type Database = {
         }
         Relationships: []
       }
+      fatsecret_food_cache: {
+        Row: {
+          fetched_at: string
+          food_id: string
+          payload: Json
+        }
+        Insert: {
+          fetched_at?: string
+          food_id: string
+          payload: Json
+        }
+        Update: {
+          fetched_at?: string
+          food_id?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
       meal_items: {
         Row: {
+          amount_unit: string
           brand: string | null
-          calories: number
-          carbs: number
+          calories: number | null
+          carbs: number | null
           created_at: string
           external_food_id: string | null
-          fat: number
-          food_name: string
-          grams: number
+          external_serving_id: string | null
+          fat: number | null
+          food_name: string | null
+          grams: number | null
           id: string
+          is_estimate: boolean
           meal_id: string
-          protein: number
+          protein: number | null
           servings: number
           source: string
           user_id: string
         }
         Insert: {
+          amount_unit?: string
           brand?: string | null
-          calories: number
-          carbs: number
+          calories?: number | null
+          carbs?: number | null
           created_at?: string
           external_food_id?: string | null
-          fat: number
-          food_name: string
-          grams: number
+          external_serving_id?: string | null
+          fat?: number | null
+          food_name?: string | null
+          grams?: number | null
           id?: string
+          is_estimate?: boolean
           meal_id: string
-          protein: number
+          protein?: number | null
           servings?: number
           source: string
           user_id: string
         }
         Update: {
+          amount_unit?: string
           brand?: string | null
-          calories?: number
-          carbs?: number
+          calories?: number | null
+          carbs?: number | null
           created_at?: string
           external_food_id?: string | null
-          fat?: number
-          food_name?: string
-          grams?: number
+          external_serving_id?: string | null
+          fat?: number | null
+          food_name?: string | null
+          grams?: number | null
           id?: string
+          is_estimate?: boolean
           meal_id?: string
-          protein?: number
+          protein?: number | null
           servings?: number
           source?: string
           user_id?: string
@@ -225,48 +252,57 @@ export type Database = {
       }
       saved_meal_items: {
         Row: {
+          amount_unit: string
           brand: string | null
-          calories: number
-          carbs: number
+          calories: number | null
+          carbs: number | null
           created_at: string
           external_food_id: string | null
-          fat: number
-          food_name: string
-          grams: number
+          external_serving_id: string | null
+          fat: number | null
+          food_name: string | null
+          grams: number | null
           id: string
-          protein: number
+          is_estimate: boolean
+          protein: number | null
           saved_meal_id: string
           servings: number
           source: string
           user_id: string
         }
         Insert: {
+          amount_unit?: string
           brand?: string | null
-          calories: number
-          carbs: number
+          calories?: number | null
+          carbs?: number | null
           created_at?: string
           external_food_id?: string | null
-          fat: number
-          food_name: string
-          grams: number
+          external_serving_id?: string | null
+          fat?: number | null
+          food_name?: string | null
+          grams?: number | null
           id?: string
-          protein: number
+          is_estimate?: boolean
+          protein?: number | null
           saved_meal_id: string
           servings?: number
           source: string
           user_id: string
         }
         Update: {
+          amount_unit?: string
           brand?: string | null
-          calories?: number
-          carbs?: number
+          calories?: number | null
+          carbs?: number | null
           created_at?: string
           external_food_id?: string | null
-          fat?: number
-          food_name?: string
-          grams?: number
+          external_serving_id?: string | null
+          fat?: number | null
+          food_name?: string | null
+          grams?: number | null
           id?: string
-          protein?: number
+          is_estimate?: boolean
+          protein?: number | null
           saved_meal_id?: string
           servings?: number
           source?: string
@@ -349,6 +385,19 @@ export type Database = {
         Returns: undefined
       }
       delete_my_account: { Args: never; Returns: undefined }
+      log_meal: {
+        Args: {
+          p_eaten_at: string
+          p_items: Json
+          p_meal_type: string
+          p_name?: string
+        }
+        Returns: string
+      }
+      move_meal_item: {
+        Args: { p_item_id: string; p_meal_type: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

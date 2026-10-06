@@ -10,7 +10,7 @@ import { ThemedText } from './ThemedText';
 interface ButtonProps extends Omit<PressableProps, 'style'> {
   label: string;
   icon?: AppIconName;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive' | 'ghostDestructive';
   size?: 'md' | 'lg';
   loading?: boolean;
   fullWidth?: boolean;
@@ -34,6 +34,7 @@ export function Button({
     secondary: { bg: colors.backgroundSecondary, fg: colors.text, border: colors.border },
     ghost: { bg: 'transparent', fg: colors.text, border: 'transparent' },
     destructive: { bg: colors.danger, fg: colors.textInverse, border: 'transparent' },
+    ghostDestructive: { bg: 'transparent', fg: colors.danger, border: 'transparent' },
   }[variant];
 
   return (

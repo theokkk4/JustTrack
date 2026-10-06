@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -7,6 +8,8 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { Spacing } from '@/constants/theme';
 
 export default function ScanScreen() {
+  const router = useRouter();
+
   return (
     <Screen>
       <View style={styles.header}>
@@ -27,7 +30,12 @@ export default function ScanScreen() {
           description="Photograph your plate for an estimate of what's on it."
         />
         <ScanOptionCard icon="barcode" title="Scan a barcode" description="Point at a package barcode for its nutrition facts." />
-        <ScanOptionCard icon="search" title="Search foods" description="Look up any food by name." />
+        <ScanOptionCard
+          icon="search"
+          title="Search foods"
+          description="Look up any food by name."
+          onPress={() => router.push('/food/search')}
+        />
       </View>
     </Screen>
   );

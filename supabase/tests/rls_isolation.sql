@@ -2,7 +2,9 @@
 --
 -- Run in the Supabase SQL editor (or psql) against any JustTrack database.
 -- It creates two throwaway users, acts as each of them plus an anonymous
--- client, and checks that nobody can see or change another user's data.
+-- client, and checks that nobody can see or change another user's data —
+-- including through the log_meal / move_meal_item functions — and that
+-- FatSecret diary rows can only ever hold IDs.
 --
 -- It ALWAYS ends by raising an error that carries the report: that's what
 -- rolls everything back, so no test data is ever left behind. Look for
@@ -13,6 +15,8 @@ declare
   user_a uuid := '00000000-0000-4000-a000-00000000000a';
   user_b uuid := '00000000-0000-4000-a000-00000000000b';
   meal_a uuid;
+  item_a uuid;
+  moved_meal uuid;
   n int;
   failures int := 0;
   report text := '';
@@ -26,19 +30,32 @@ begin
   if n <> 2 then failures := failures + 1; end if;
   report := report || format('[%s] profiles auto-created=%s/2 ', case when n = 2 then 'ok' else 'FAIL' end, n);
 
-  -- User A logs some data.
+  -- User A logs a meal: one FatSecret item (IDs only) and one custom item.
   execute 'set local role authenticated';
   perform set_config('request.jwt.claims', json_build_object('sub', user_a, 'role', 'authenticated')::text, true);
-  insert into public.meals (user_id, meal_type) values (user_a, 'lunch') returning id into meal_a;
-  insert into public.meal_items (meal_id, user_id, food_name, source, grams, calories, protein, carbs, fat)
-    values (meal_a, user_a, 'Chicken breast', 'fatsecret', 150, 248, 46, 0, 5);
+  meal_a := public.log_meal('lunch', now(), jsonb_build_array(
+    jsonb_build_object('source', 'fatsecret', 'external_food_id', '1641', 'external_serving_id', '4822', 'servings', 1.5, 'amount_unit', 'serving'),
+    jsonb_build_object('source', 'custom', 'food_name', 'Protein bar', 'grams', 60, 'calories', 210, 'protein', 20, 'carbs', 22, 'fat', 7)
+  ));
+  select id into item_a from public.meal_items where meal_id = meal_a and source = 'fatsecret';
   insert into public.nutrition_goals (user_id, calorie_goal, protein_goal, carbs_goal, fat_goal) values (user_a, 2200, 150, 220, 70);
   insert into public.weight_entries (user_id, weight_kg) values (user_a, 80);
   insert into public.custom_foods (user_id, name, serving_size, calories) values (user_a, 'Protein bar', 60, 210);
 
-  select count(*) into n from public.meal_items;
-  if n <> 1 then failures := failures + 1; end if;
-  report := report || format('[%s] A sees own items=%s ', case when n = 1 then 'ok' else 'FAIL' end, n);
+  select count(*) into n from public.meal_items where meal_id = meal_a;
+  if n <> 2 then failures := failures + 1; end if;
+  report := report || format('[%s] A logs meal with 2 items=%s ', case when n = 2 then 'ok' else 'FAIL' end, n);
+
+  -- FatSecret terms: only IDs may be stored, so content alongside them is rejected.
+  begin
+    perform public.log_meal('lunch', now(), jsonb_build_array(
+      jsonb_build_object('source', 'fatsecret', 'external_food_id', '1641', 'external_serving_id', '4822', 'food_name', 'Chicken', 'calories', 165)
+    ));
+    failures := failures + 1;
+    report := report || '[FAIL] FatSecret row stored content ';
+  exception when check_violation then
+    report := report || '[ok] FatSecret row with content: rejected ';
+  end;
 
   -- User B must not see or touch any of it.
   perform set_config('request.jwt.claims', json_build_object('sub', user_b, 'role', 'authenticated')::text, true);
@@ -87,6 +104,14 @@ begin
     report := report || format('[ok] B attaches item to A meal: blocked %s ', sqlstate);
   end;
 
+  begin
+    perform public.move_meal_item(item_a, 'dinner');
+    failures := failures + 1;
+    report := report || '[FAIL] B moves A item ';
+  exception when others then
+    report := report || format('[ok] B moves A item: blocked %s ', sqlstate);
+  end;
+
   -- A signed-out client gets nothing at all.
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   execute 'set local role anon';
@@ -97,10 +122,28 @@ begin
   exception when others then
     report := report || format('[ok] anon reads meals: denied %s ', sqlstate);
   end;
+  begin
+    perform public.log_meal('lunch', now(), '[{"source":"custom","food_name":"x","grams":1,"calories":1,"protein":0,"carbs":0,"fat":0}]');
+    failures := failures + 1;
+    report := report || '[FAIL] anon logs a meal ';
+  exception when others then
+    report := report || format('[ok] anon logs a meal: denied %s ', sqlstate);
+  end;
 
-  -- delete_my_account wipes A completely and leaves B alone.
+  -- A moves the FatSecret item to dinner, then deletes what's left: emptied meals disappear.
   execute 'set local role authenticated';
   perform set_config('request.jwt.claims', json_build_object('sub', user_a, 'role', 'authenticated')::text, true);
+  moved_meal := public.move_meal_item(item_a, 'dinner');
+  select count(*) into n from public.meals where id = moved_meal and meal_type = 'dinner';
+  if n <> 1 or moved_meal = meal_a then failures := failures + 1; end if;
+  report := report || format('[%s] A moves item to dinner=%s ', case when n = 1 and moved_meal <> meal_a then 'ok' else 'FAIL' end, n);
+
+  delete from public.meal_items where meal_id = meal_a;
+  select count(*) into n from public.meals where id = meal_a;
+  if n <> 0 then failures := failures + 1; end if;
+  report := report || format('[%s] emptied meal removed=%s ', case when n = 0 then 'ok' else 'FAIL' end, 1 - n);
+
+  -- delete_my_account wipes A completely and leaves B alone.
   perform public.delete_my_account();
   execute 'reset role';
 

@@ -7,9 +7,10 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { MEAL_TYPE_META } from '@/constants/nutrition';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { useEntryActions } from '@/hooks/useEntryActions';
 import type { MealSection } from '@/services/nutritionService';
 import { formatCalories } from '@/utils/format';
-import { FoodRow } from './FoodRow';
+import { DiaryEntryRow } from './DiaryEntryRow';
 
 interface MealSectionCardProps {
   section: MealSection;
@@ -18,6 +19,7 @@ interface MealSectionCardProps {
 
 export function MealSectionCard({ section, onAddFood }: MealSectionCardProps) {
   const { colors } = useAppTheme();
+  const actions = useEntryActions();
   const meta = MEAL_TYPE_META[section.mealType];
   const hasItems = section.items.length > 0;
 
@@ -26,7 +28,9 @@ export function MealSectionCard({ section, onAddFood }: MealSectionCardProps) {
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.titleRow}>
           <AppIcon name={meta.icon} size={18} color={colors.textSecondary} />
-          <ThemedText variant="headline">{meta.label}</ThemedText>
+          <ThemedText variant="headline" accessibilityRole="header">
+            {meta.label}
+          </ThemedText>
         </View>
         <ThemedText variant="subheadEmphasized" color={hasItems ? 'primary' : 'tertiary'} style={styles.tabular}>
           {formatCalories(section.totals.calories)}
@@ -34,7 +38,15 @@ export function MealSectionCard({ section, onAddFood }: MealSectionCardProps) {
       </View>
 
       {section.items.map((item, index) => (
-        <FoodRow key={item.id} item={item} isLast={index === section.items.length - 1 && !onAddFood} />
+        <DiaryEntryRow
+          key={item.id}
+          item={item}
+          isLast={index === section.items.length - 1 && !onAddFood}
+          onOpen={() => actions.open(item)}
+          onDuplicate={() => actions.duplicate(item)}
+          onDelete={() => actions.remove(item)}
+          onMore={() => actions.more(item)}
+        />
       ))}
 
       {onAddFood ? (
@@ -71,6 +83,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
+    minHeight: 48,
   },
   tabular: { fontVariant: ['tabular-nums'] },
 });

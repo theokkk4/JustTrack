@@ -22,6 +22,21 @@ export function toDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+/** Local midnight for a YYYY-MM-DD key, or null if the key isn't a real date. */
+export function parseDateKey(key: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  if (!match) return null;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
+}
+
+/** [start, end) of a local calendar day — 23 or 25 hours long across a DST change. */
+export function dayRange(date: Date): { start: Date; end: Date } {
+  const start = startOfDay(date);
+  return { start, end: addDays(start, 1) };
+}
+
 export function getGreeting(now: Date = new Date()): string {
   const hour = now.getHours();
   if (hour >= 5 && hour < 12) return 'Good morning';

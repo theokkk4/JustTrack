@@ -37,3 +37,51 @@ export function showOptionSheet<T extends string>({ title, options, selected, on
     { text: 'Cancel', style: 'cancel' as const },
   ]);
 }
+
+export interface MenuAction {
+  label: string;
+  destructive?: boolean;
+  onPress: () => void;
+}
+
+/** A native iOS action sheet of commands (e.g. a long-press menu). Elsewhere, an Alert. */
+export function showActionMenu({ title, actions }: { title?: string; actions: readonly MenuAction[] }) {
+  if (Platform.OS === 'ios') {
+    const destructiveIndex = actions.findIndex((action) => action.destructive);
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        title,
+        options: [...actions.map((action) => action.label), 'Cancel'],
+        cancelButtonIndex: actions.length,
+        destructiveButtonIndex: destructiveIndex >= 0 ? destructiveIndex : undefined,
+      },
+      (index) => actions[index]?.onPress()
+    );
+    return;
+  }
+  Alert.alert(title ?? '', undefined, [
+    ...actions.map((action) => ({ text: action.label, style: action.destructive ? ('destructive' as const) : undefined, onPress: action.onPress })),
+    { text: 'Cancel', style: 'cancel' as const },
+  ]);
+}
+
+/**
+ * Asks before doing something that can't be undone. Resolves true to go ahead.
+ * React Native Web's Alert does nothing, so the browser's confirm() stands in there.
+ */
+export function confirmAsync({ title, message, confirmLabel }: { title: string; message?: string; confirmLabel: string }): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    return Promise.resolve(globalThis.confirm?.(message ? `${title}\n\n${message}` : title) ?? false);
+  }
+  return new Promise((resolve) => {
+    Alert.alert(
+      title,
+      message,
+      [
+        { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+        { text: confirmLabel, style: 'destructive', onPress: () => resolve(true) },
+      ],
+      { cancelable: true, onDismiss: () => resolve(false) }
+    );
+  });
+}

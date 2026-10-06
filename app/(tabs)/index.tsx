@@ -2,8 +2,10 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { FatSecretAttribution } from '@/components/food/FatSecretAttribution';
 import { CalorieRing } from '@/components/nutrition/CalorieRing';
 import { MacroBar } from '@/components/nutrition/MacroBar';
+import { Banner } from '@/components/ui/Banner';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ListRow, ListSection } from '@/components/ui/ListRow';
@@ -22,11 +24,12 @@ export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { now, today } = useCurrentTime();
-  const { sections, totals } = useDayLog(today);
+  const day = useDayLog(today);
+  const { sections, totals } = day;
   const goals = useNutritionGoals();
 
   return (
-    <Screen>
+    <Screen onRefresh={() => void day.refresh()} refreshing={day.refreshing && day.status !== 'loading'}>
       <View style={styles.header}>
         <ThemedText variant="footnote" color="secondary" style={styles.eyebrow}>
           {formatLongDate(today).toUpperCase()}
@@ -69,9 +72,17 @@ export default function HomeScreen() {
         ))}
       </ListSection>
 
+      {day.unresolvedCount > 0 && day.foodsError ? (
+        <View style={styles.notice}>
+          <Banner tone="warning" message="Some foods couldn’t load, so today’s totals may be low." actionLabel="Retry" onAction={() => void day.refresh()} />
+        </View>
+      ) : null}
+
       <View style={styles.addFood}>
-        <Button label="Add Food" icon="plus" onPress={() => router.navigate('/scan')} />
+        <Button label="Add Food" icon="plus" onPress={() => router.push('/food/search')} />
       </View>
+
+      {day.hasFatSecretContent ? <FatSecretAttribution style={styles.attribution} /> : null}
     </Screen>
   );
 }
@@ -84,4 +95,6 @@ const styles = StyleSheet.create({
   sectionTitle: { marginTop: Spacing['3xl'], marginBottom: Spacing.md },
   meals: { marginTop: 0 },
   addFood: { marginTop: Spacing.xl },
+  notice: { marginTop: Spacing.lg },
+  attribution: { marginTop: Spacing.lg },
 });

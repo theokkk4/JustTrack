@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FatSecretAttribution } from '@/components/food/FatSecretAttribution';
 import { Logo } from '@/components/ui/Logo';
 import { Colors, Radii, Spacing, Typography } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,6 +66,7 @@ export default function WelcomeScreen() {
         <Text style={[Typography.caption1, styles.fineprint, { color: brand.textTertiary }]}>
           Free and open source. No ads, no subscriptions.
         </Text>
+        <FatSecretAttribution style={styles.attribution} />
       </Animated.View>
     </SafeAreaView>
   );
@@ -79,4 +81,5 @@ const styles = StyleSheet.create({
   primary: { alignItems: 'center', justifyContent: 'center', borderRadius: Radii.md, paddingVertical: Spacing.lg },
   secondary: { alignItems: 'center', paddingVertical: Spacing.sm },
   fineprint: { textAlign: 'center', marginTop: Spacing.sm },
+  attribution: { paddingVertical: 0 },
 });

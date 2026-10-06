@@ -1,4 +1,4 @@
-import { addDays, formatRelativeDay, getGreeting, isSameDay, startOfDay, toDateKey } from '../date';
+import { addDays, dayRange, formatRelativeDay, getGreeting, isSameDay, parseDateKey, startOfDay, toDateKey } from '../date';
 
 describe('toDateKey', () => {
   it('uses the local calendar date, not UTC', () => {
@@ -52,5 +52,32 @@ describe('formatRelativeDay', () => {
 
   it('falls back to a short date for anything further away', () => {
     expect(formatRelativeDay(new Date(2026, 8, 20), today)).toBe('Sun, Sep 20');
+  });
+});
+
+describe('parseDateKey', () => {
+  it('returns local midnight for a valid key', () => {
+    const date = parseDateKey('2026-09-23');
+    expect(date && [date.getFullYear(), date.getMonth(), date.getDate(), date.getHours()]).toEqual([2026, 8, 23, 0]);
+  });
+
+  it('round-trips with toDateKey', () => {
+    expect(toDateKey(parseDateKey('2026-01-05') as Date)).toBe('2026-01-05');
+  });
+
+  it('rejects malformed or impossible dates', () => {
+    expect(parseDateKey('2026-9-23')).toBeNull();
+    expect(parseDateKey('2026-02-30')).toBeNull();
+    expect(parseDateKey('yesterday')).toBeNull();
+  });
+});
+
+describe('dayRange', () => {
+  it('spans local midnight to the next local midnight', () => {
+    const { start, end } = dayRange(new Date(2026, 8, 23, 15, 45));
+    expect(toDateKey(start)).toBe('2026-09-23');
+    expect([start.getHours(), start.getMinutes()]).toEqual([0, 0]);
+    expect(toDateKey(end)).toBe('2026-09-24');
+    expect([end.getHours(), end.getMinutes()]).toEqual([0, 0]);
   });
 });
