@@ -66,5 +66,6 @@ const styles = StyleSheet.create({
     minHeight: 52,
     gap: Spacing.sm,
   },
-  input: { flex: 1, paddingVertical: Spacing.md },
+  // minWidth 0 lets the input shrink on web, where it otherwise keeps a default width and pushes the suffix out.
+  input: { flex: 1, minWidth: 0, paddingVertical: Spacing.md },
 });

@@ -57,8 +57,9 @@ export function sumNutrition(items: readonly NutritionValues[]): NutritionValues
   );
 }
 
+/** Rounds each side first, so the numbers on screen always add up (248 eaten + 1,952 left = 2,200). */
 export function calculateRemaining(goal: number, consumed: number): number {
-  return Math.round(goal - consumed);
+  return Math.round(goal) - Math.round(consumed);
 }
 
 /** Progress toward a goal, clamped to [0, 1] for use in progress bars/rings. */

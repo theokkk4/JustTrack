@@ -73,6 +73,10 @@ describe('calculateRemaining', () => {
   it('returns a negative remaining when over goal', () => {
     expect(calculateRemaining(2000, 2200)).toBe(-200);
   });
+
+  it('agrees with the rounded numbers shown on screen', () => {
+    expect(calculateRemaining(2200, 247.5)).toBe(2200 - 248);
+  });
 });
 
 describe('calculateProgress', () => {
