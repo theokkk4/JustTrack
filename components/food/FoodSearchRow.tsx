@@ -5,43 +5,40 @@ import { AppIcon } from '@/components/ui/AppIcon';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
-import type { FoodSearchResult } from '@/types';
+import { defaultServing } from '@/lib/nutrition/portion';
+import type { FoodDetail } from '@/types';
 import { formatNumber } from '@/utils/format';
 
 interface FoodSearchRowProps {
-  result: FoodSearchResult;
+  food: FoodDetail;
   onPress: () => void;
 }
 
-export function FoodSearchRow({ result, onPress }: FoodSearchRowProps) {
+export function FoodSearchRow({ food, onPress }: FoodSearchRowProps) {
   const { colors } = useAppTheme();
-  const basis = result.basis ? `Per ${result.basis}` : null;
-  const detail = [result.brand, basis].filter(Boolean).join(' · ');
-  const calories = result.calories !== null ? `${formatNumber(result.calories)} cal` : null;
+  const serving = defaultServing(food);
+  const detail = [food.brand, serving.description].filter(Boolean).join(' · ');
+  const calories = `${formatNumber(serving.calories)} cal`;
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={[result.name, result.brand, calories && basis ? `${calories} ${basis.toLowerCase()}` : null].filter(Boolean).join(', ')}
+      accessibilityLabel={[food.name, food.brand, `${calories} per ${serving.description}`].filter(Boolean).join(', ')}
       accessibilityHint="Choose an amount and add it to your diary"
       style={({ pressed }) => [styles.row, { borderBottomColor: colors.border }, pressed && { backgroundColor: colors.backgroundSecondary }]}
     >
       <View style={styles.text}>
         <ThemedText variant="body" numberOfLines={2}>
-          {result.name}
+          {food.name}
         </ThemedText>
-        {detail ? (
-          <ThemedText variant="footnote" color="secondary" numberOfLines={1}>
-            {detail}
-          </ThemedText>
-        ) : null}
+        <ThemedText variant="footnote" color="secondary" numberOfLines={1}>
+          {detail}
+        </ThemedText>
       </View>
-      {calories ? (
-        <ThemedText variant="subheadEmphasized" color="secondary" style={styles.tabular}>
-          {calories}
-        </ThemedText>
-      ) : null}
+      <ThemedText variant="subheadEmphasized" color="secondary" style={styles.tabular}>
+        {calories}
+      </ThemedText>
       <AppIcon name="chevronRight" size={13} color={colors.textTertiary} weight="semibold" />
     </Pressable>
   );

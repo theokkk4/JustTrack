@@ -1,13 +1,11 @@
 import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
 
-import { FatSecretAttribution } from '@/components/food/FatSecretAttribution';
 import { MealTypePicker } from '@/components/food/MealTypePicker';
 import { NutritionSummary } from '@/components/food/NutritionSummary';
 import { PortionEditor } from '@/components/food/PortionEditor';
-import { Banner } from '@/components/ui/Banner';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { HeaderButton } from '@/components/ui/HeaderButton';
@@ -18,9 +16,9 @@ import { useDiary } from '@/contexts/DiaryContext';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { useDayLog } from '@/hooks/useDayLog';
-import { useFood } from '@/hooks/useFood';
 import { usePortion } from '@/hooks/usePortion';
 import { storedEntryAsFood } from '@/lib/diary/resolve';
+import { getUsdaFood } from '@/lib/food/usdaDatabase';
 import type { StoredPortion } from '@/lib/nutrition/portion';
 import type { MealType } from '@/types';
 import { confirmAsync } from '@/utils/actionSheet';
@@ -45,12 +43,20 @@ export default function EditEntryScreen() {
   const entry = day.sections.flatMap((section) => section.items).find((item) => item.id === entryId);
   const record = entry?.record;
 
-  // FatSecret entries are edited against the live food; others against their own stored values.
-  const isFatSecret = record?.source === 'fatsecret';
-  const fatSecret = useFood(isFatSecret ? record.externalFoodId : null);
-  const food = isFatSecret ? fatSecret.food : ((record && storedEntryAsFood(record)) ?? undefined);
+  // Built-in foods reopen with all their portions ("1 cup", grams…); anything else is
+  // rescaled from its own stored values.
+  const databaseFood = useMemo(
+    () => (record?.source === 'usda' && record.externalFoodId && record.externalServingId ? getUsdaFood(record.externalFoodId) : null),
+    [record]
+  );
+  const editAgainstDatabase = Boolean(databaseFood?.servings.some((serving) => serving.id === record?.externalServingId));
+  const food = (editAgainstDatabase ? databaseFood : record && storedEntryAsFood(record)) ?? undefined;
   const initialPortion: StoredPortion | null = record
-    ? { servingId: isFatSecret ? (record.externalServingId ?? '') : 'entry', servings: record.servings, amountUnit: record.amountUnit }
+    ? {
+        servingId: editAgainstDatabase ? (record.externalServingId ?? '') : 'entry',
+        servings: record.servings,
+        amountUnit: record.amountUnit,
+      }
     : null;
   const portion = usePortion(food, initialPortion);
 
@@ -147,20 +153,12 @@ export default function EditEntryScreen() {
         ) : null}
       </View>
 
-      {food ? (
-        <>
-          <NutritionSummary
-            nutrition={portion.nutrition ?? entry}
-            caption={portion.description ?? entry.amountLabel}
-            estimated={entry.isEstimate}
-          />
-          <PortionEditor portion={portion} />
-        </>
-      ) : isFatSecret && fatSecret.error ? (
-        <Banner tone="warning" message={fatSecret.error} actionLabel="Retry" onAction={fatSecret.retry} />
-      ) : (
-        <ActivityIndicator color={colors.textSecondary} />
-      )}
+      <NutritionSummary
+        nutrition={portion.nutrition ?? entry}
+        caption={portion.description ?? entry.amountLabel}
+        estimated={entry.isEstimate}
+      />
+      {food ? <PortionEditor portion={portion} /> : null}
 
       <View style={styles.meal}>
         <ThemedText variant="footnote" color="secondary" style={styles.label}>
@@ -181,7 +179,6 @@ export default function EditEntryScreen() {
         <Button label="Delete Entry" icon="trash" variant="ghostDestructive" onPress={remove} disabled={busy} />
       </View>
 
-      {isFatSecret ? <FatSecretAttribution /> : null}
     </ScrollView>
   );
 }

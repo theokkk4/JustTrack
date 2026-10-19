@@ -15,7 +15,6 @@ interface FoodRowProps extends Pick<PressableProps, 'accessibilityActions' | 'on
 }
 
 export function describeEntry(item: MealItem): string {
-  if (!item.resolved) return `${item.foodName}, ${item.amountLabel}. Nutrition details couldn’t load.`;
   const estimate = item.isEstimate ? 'Estimated: ' : '';
   return `${item.foodName}, ${item.amountLabel}. ${estimate}${formatCalories(item.calories)}, ${formatNumber(item.protein)} grams protein.`;
 }
@@ -40,7 +39,7 @@ export function FoodRow({ item, onPress, onLongPress, isLast = false, accessibil
       ]}
     >
       <View style={styles.details}>
-        <ThemedText variant="body" numberOfLines={1} color={item.resolved ? 'primary' : 'secondary'}>
+        <ThemedText variant="body" numberOfLines={1}>
           {item.foodName}
         </ThemedText>
         <View style={styles.detailRow}>
@@ -57,14 +56,12 @@ export function FoodRow({ item, onPress, onLongPress, isLast = false, accessibil
         </View>
       </View>
       <View style={styles.nutrition}>
-        <ThemedText variant="subheadEmphasized" color={item.resolved ? 'primary' : 'tertiary'} style={styles.tabular}>
-          {item.resolved ? formatCalories(item.calories) : '— cal'}
+        <ThemedText variant="subheadEmphasized" style={styles.tabular}>
+          {formatCalories(item.calories)}
         </ThemedText>
-        {item.resolved ? (
-          <ThemedText variant="footnote" color="secondary" style={styles.tabular}>
-            {formatNumber(item.protein)}g protein
-          </ThemedText>
-        ) : null}
+        <ThemedText variant="footnote" color="secondary" style={styles.tabular}>
+          {formatNumber(item.protein)}g protein
+        </ThemedText>
       </View>
     </Pressable>
   );

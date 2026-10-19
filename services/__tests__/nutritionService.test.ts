@@ -11,7 +11,6 @@ function item(overrides: Partial<MealItem> & Pick<MealItem, 'id' | 'createdAt'>)
     brand: null,
     amountLabel: '1 serving · 100 g',
     isEstimate: false,
-    resolved: true,
     record: {
       id: overrides.id,
       mealId: 'meal',

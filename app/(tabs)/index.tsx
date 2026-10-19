@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { FatSecretAttribution } from '@/components/food/FatSecretAttribution';
 import { CalorieRing } from '@/components/nutrition/CalorieRing';
 import { MacroBar } from '@/components/nutrition/MacroBar';
 import { Banner } from '@/components/ui/Banner';
@@ -72,17 +71,15 @@ export default function HomeScreen() {
         ))}
       </ListSection>
 
-      {day.unresolvedCount > 0 && day.foodsError ? (
+      {day.error ? (
         <View style={styles.notice}>
-          <Banner tone="warning" message="Some foods couldn’t load, so today’s totals may be low." actionLabel="Retry" onAction={() => void day.refresh()} />
+          <Banner tone="error" message={day.error} actionLabel="Retry" onAction={() => void day.refresh()} />
         </View>
       ) : null}
 
       <View style={styles.addFood}>
         <Button label="Add Food" icon="plus" onPress={() => router.push('/food/search')} />
       </View>
-
-      {day.hasFatSecretContent ? <FatSecretAttribution style={styles.attribution} /> : null}
     </Screen>
   );
 }
@@ -96,5 +93,4 @@ const styles = StyleSheet.create({
   meals: { marginTop: 0 },
   addFood: { marginTop: Spacing.xl },
   notice: { marginTop: Spacing.lg },
-  attribution: { marginTop: Spacing.lg },
 });

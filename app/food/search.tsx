@@ -1,8 +1,8 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, SectionList, StyleSheet, View } from 'react-native';
 
-import { FatSecretAttribution } from '@/components/food/FatSecretAttribution';
+import { FoodDataAttribution } from '@/components/food/FoodDataAttribution';
 import { FoodSearchRow } from '@/components/food/FoodSearchRow';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { HeaderButton } from '@/components/ui/HeaderButton';
@@ -13,10 +13,13 @@ import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { MIN_QUERY_LENGTH, useFoodSearch } from '@/hooks/useFoodSearch';
+import { useFoodSearch } from '@/hooks/useFoodSearch';
+import type { FoodDetail } from '@/types';
 import { formatRelativeDay, parseDateKey, toDateKey } from '@/utils/date';
 import { defaultMealType } from '@/utils/mealTime';
 import { dateKeyParam, mealTypeParam } from '@/utils/routeParams';
+
+type SectionKey = 'everyday' | 'packaged';
 
 export default function FoodSearchScreen() {
   const router = useRouter();
@@ -27,72 +30,85 @@ export default function FoodSearchScreen() {
   const dateKey = dateKeyParam(params.date) ?? toDateKey(today);
 
   const [query, setQuery] = useState('');
-  const debouncedQuery = useDebouncedValue(query.trim(), 350);
+  // Built-in results are instant; the short debounce just spares Open Food Facts a request per keystroke.
+  const debouncedQuery = useDebouncedValue(query.trim(), 300);
   const search = useFoodSearch(debouncedQuery);
-  const typing = query.trim() !== debouncedQuery && query.trim().length >= MIN_QUERY_LENGTH;
 
+  const open = (food: FoodDetail) => router.push({ pathname: '/food/[id]', params: { id: food.id, mealType, date: dateKey } });
   const destination = `${MEAL_TYPE_META[mealType].label} · ${formatRelativeDay(parseDateKey(dateKey) ?? today, today)}`;
 
-  let empty: React.ReactNode = null;
-  if (search.status === 'idle') {
-    empty = <EmptyState icon="search" title="Search for a food" message="Try “greek yogurt”, “banana”, or a brand name." />;
-  } else if (search.status === 'error') {
-    empty = (
-      <EmptyState
-        icon="wifiOff"
-        title="Search isn’t working right now"
-        message={search.error ?? 'Please try again.'}
-        actionLabel="Try Again"
-        onAction={search.retry}
-      />
-    );
-  } else if (search.status === 'ready' && !typing) {
-    empty = (
-      <EmptyState icon="search" title={`No results for “${debouncedQuery}”`} message="Check the spelling, or try a more general name." />
-    );
-  } else {
-    empty = <ActivityIndicator style={styles.spinner} color={colors.textSecondary} />;
-  }
+  const sections: { key: SectionKey; title: string; data: FoodDetail[] }[] = search.active
+    ? [
+        { key: 'everyday', title: 'Everyday foods', data: search.everyday },
+        { key: 'packaged', title: 'Packaged foods', data: search.packaged },
+      ]
+    : [];
+
+  const sectionFooter = (key: SectionKey) => {
+    if (key === 'everyday') {
+      return search.everyday.length === 0 ? <Note text="No everyday foods match — try a simpler word." /> : null;
+    }
+    if (search.packagedStatus === 'loading') return <ActivityIndicator style={styles.inline} color={colors.textSecondary} />;
+    if (search.packagedStatus === 'error') {
+      return <Note text={search.packagedError ?? 'Packaged foods couldn’t load.'} actionLabel="Try again" onAction={search.retryPackaged} />;
+    }
+    if (search.packaged.length === 0) return <Note text="No packaged foods match." />;
+    if (search.loadingMore) return <ActivityIndicator style={styles.inline} color={colors.textSecondary} />;
+    return null;
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerLeft: () => <HeaderButton label="Cancel" onPress={() => router.back()} /> }} />
 
       <View style={styles.searchBar}>
-        <SearchField
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search foods"
-          autoFocus
-          loading={typing || (search.status === 'loading' && search.results.length > 0)}
-        />
+        <SearchField value={query} onChangeText={setQuery} placeholder="Search foods or brands" autoFocus />
         <ThemedText variant="footnote" color="secondary" style={styles.destination}>
           Adding to {destination}
         </ThemedText>
       </View>
 
-      <FlatList
-        data={search.results}
-        keyExtractor={(result) => result.id}
-        renderItem={({ item }) => (
-          <FoodSearchRow
-            result={item}
-            onPress={() => router.push({ pathname: '/food/[id]', params: { id: item.id, mealType, date: dateKey } })}
-          />
+      <SectionList
+        sections={sections}
+        keyExtractor={(food) => food.id}
+        renderItem={({ item }) => <FoodSearchRow food={item} onPress={() => open(item)} />}
+        renderSectionHeader={({ section }) => (
+          <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+            <ThemedText variant="footnote" color="secondary" style={styles.sectionTitle}>
+              {section.title.toUpperCase()}
+            </ThemedText>
+          </View>
         )}
+        renderSectionFooter={({ section }) => sectionFooter(section.key)}
+        stickySectionHeadersEnabled
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         onEndReached={() => void search.loadMore()}
         onEndReachedThreshold={0.6}
-        ListEmptyComponent={empty}
-        ListFooterComponent={
-          <View style={styles.footer}>
-            {search.loadingMore ? <ActivityIndicator color={colors.textSecondary} /> : null}
-            <FatSecretAttribution />
-          </View>
+        ListEmptyComponent={
+          <EmptyState icon="search" title="Search for a food" message="Try “chicken breast”, “banana”, or a brand like “Chobani”." />
         }
+        ListFooterComponent={<FoodDataAttribution style={styles.attribution} />}
         contentContainerStyle={styles.list}
       />
+    </View>
+  );
+}
+
+function Note({ text, actionLabel, onAction }: { text: string; actionLabel?: string; onAction?: () => void }) {
+  const { colors } = useAppTheme();
+  return (
+    <View style={styles.note}>
+      <ThemedText variant="footnote" color="secondary" style={styles.noteText}>
+        {text}
+      </ThemedText>
+      {actionLabel && onAction ? (
+        <Pressable onPress={onAction} accessibilityRole="button" hitSlop={8}>
+          <ThemedText variant="footnote" style={{ color: colors.accent, fontWeight: '600' }}>
+            {actionLabel}
+          </ThemedText>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -101,7 +117,11 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   searchBar: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.sm, gap: Spacing.sm },
   destination: { marginLeft: Spacing.xs },
-  list: { flexGrow: 1 },
-  spinner: { marginTop: Spacing['3xl'] },
-  footer: { paddingVertical: Spacing.lg, gap: Spacing.md },
+  list: { flexGrow: 1, paddingBottom: Spacing['3xl'] },
+  sectionHeader: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.xs },
+  sectionTitle: { letterSpacing: 0.5 },
+  inline: { marginVertical: Spacing.lg },
+  note: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  noteText: { flex: 1 },
+  attribution: { marginTop: Spacing.lg },
 });

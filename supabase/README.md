@@ -4,7 +4,7 @@
 supabase/
   migrations/   Postgres schema, row level security, and RPC functions (applied in order)
   tests/        SQL checks you can run against any JustTrack database
-  functions/    Edge Functions (FatSecret proxy, AI meal analysis)
+  functions/    Edge Functions (AI meal analysis)
 ```
 
 ## Security model
@@ -44,37 +44,14 @@ SMTP Settings) or turn off **Confirm email**. Sign in with Apple is unaffected e
 
 | Name | Value | Used by |
 | --- | --- | --- |
-| `FATSECRET_CLIENT_ID` | FatSecret **Client ID** (the same value is the OAuth 1.0 *Consumer Key*) | Food search and details |
-| `FATSECRET_CONSUMER_SECRET` | FatSecret **Consumer Secret** (OAuth 1.0) — *not* the Client Secret | Food search and details |
-| `FATSECRET_CLIENT_SECRET` | Optional: FatSecret **Client Secret** (OAuth 2.0) | Only used if no Consumer Secret is set |
 | `ANTHROPIC_API_KEY` | Anthropic API key | AI meal scanner |
 
-Find the FatSecret values at platform.fatsecret.com → *My Account* → *API Keys*. Use the
-OAuth 1.0 Consumer Secret: FatSecret only applies its IP allow-list to OAuth 2.0, and Edge
-Functions don't run from fixed IP addresses, so OAuth 2.0 calls from them get rejected
-unless your key's allow-list is open (Premier keys can allow ranges; Basic keys can't).
+Server-only. Never put it in `.env` with an `EXPO_PUBLIC_` prefix, never paste it into chat,
+and never commit it.
 
-These are server-only. Never put them in `.env` with an `EXPO_PUBLIC_` prefix, and never
-paste them into chat or commit them.
-
-## Edge Functions
-
-| Function | Does |
-| --- | --- |
-| `fatsecret-search` | Searches FatSecret's food database |
-| `fatsecret-food` | Looks up full nutrition for up to 50 FatSecret food IDs, through a cache that's purged before content turns 24 hours old |
-| `fatsecret-barcode` | Barcode lookup (FatSecret Premier only; Open Food Facts fallback lands with the scanner) |
-
-Each one checks the caller's Supabase session itself, so they're deployed without the
-gateway's JWT check (which doesn't understand the project's new asymmetric keys):
-
-```bash
-npx supabase functions deploy fatsecret-search --no-verify-jwt
-npx supabase functions deploy fatsecret-food --no-verify-jwt
-npx supabase functions deploy fatsecret-barcode --no-verify-jwt
-```
-
-Unit tests for the shared code run under Deno: `deno test supabase/functions`.
+Food search needs no keys at all: everyday foods come from a USDA database bundled in the
+app (`assets/data/usda-foods.json`, rebuilt with `scripts/build-food-database.js`), and
+packaged foods and barcodes from Open Food Facts, which the app calls directly.
 
 ## Setting up a fresh project
 

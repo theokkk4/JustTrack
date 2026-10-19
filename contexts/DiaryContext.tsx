@@ -1,11 +1,8 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { missingFoodIds } from '@/lib/diary/resolve';
-import { clearFoodCache, getFoodSnapshot, pruneFoodCache, subscribeToFoodCache, type FoodSnapshot } from '@/lib/food/foodCache';
 import type { StoredPortion } from '@/lib/nutrition/portion';
-import { fetchFoods } from '@/services/foodService';
 import * as mealService from '@/services/mealService';
 import type { FoodDetail, MealItem, MealRecord, MealType, NewMealItem } from '@/types';
 import { dayRange, parseDateKey, toDateKey } from '@/utils/date';
@@ -17,16 +14,13 @@ export interface DayState {
   status: 'loading' | 'ready' | 'error';
   refreshing: boolean;
   meals: MealRecord[];
-  /** The diary itself couldn't load (or refresh). */
+  /** The diary couldn't load (or refresh). */
   error: string | null;
-  /** FatSecret names/nutrition couldn't load, so some entries show as unavailable. */
-  foodsError: string | null;
   loadedAt: number | null;
 }
 
 interface DiaryContextValue {
   days: Readonly<Record<string, DayState>>;
-  foods: FoodSnapshot;
   /** Bumps each time the app returns to the foreground, so visible days can refresh. */
   foregroundCount: number;
   loadDay: (dateKey: string) => Promise<void>;
@@ -41,7 +35,7 @@ const DiaryContext = createContext<DiaryContextValue | null>(null);
 const NO_DAYS: Record<string, DayState> = {};
 
 function emptyDay(): DayState {
-  return { status: 'loading', refreshing: true, meals: [], error: null, foodsError: null, loadedAt: null };
+  return { status: 'loading', refreshing: true, meals: [], error: null, loadedAt: null };
 }
 
 export function entryDateKey(entry: Pick<MealItem, 'eatenAt'>): string {
@@ -64,17 +58,10 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
   // Every load gets a ticket per user+day; only the newest may write its result.
   const tickets = useRef(new Map<string, number>());
 
-  useEffect(() => {
-    if (!userId) clearFoodCache();
-  }, [userId]);
-
-  const foods = useSyncExternalStore(subscribeToFoodCache, getFoodSnapshot, getFoodSnapshot);
-
   const [foregroundCount, setForegroundCount] = useState(0);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
       if (state !== 'active') return;
-      pruneFoodCache();
       setForegroundCount((count) => count + 1);
     });
     return () => subscription.remove();
@@ -87,23 +74,6 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
         : previous
     );
   }, []);
-
-  const resolveFoods = useCallback(
-    async (forUser: string, dateKey: string, meals: MealRecord[]) => {
-      const ids = missingFoodIds(meals, getFoodSnapshot(), Date.now());
-      if (ids.length === 0) {
-        updateDay(forUser, dateKey, (day) => ({ ...day, foodsError: null }));
-        return;
-      }
-      try {
-        await fetchFoods(ids);
-        updateDay(forUser, dateKey, (day) => ({ ...day, foodsError: null }));
-      } catch (error) {
-        updateDay(forUser, dateKey, (day) => ({ ...day, foodsError: getErrorMessage(error) }));
-      }
-    },
-    [updateDay]
-  );
 
   const loadDay = useCallback(
     async (dateKey: string) => {
@@ -120,7 +90,6 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
         const meals = await mealService.fetchMeals(userId, start, end);
         if (!isLatest()) return;
         updateDay(userId, dateKey, (day) => ({ ...day, status: 'ready', refreshing: false, meals, error: null, loadedAt: Date.now() }));
-        await resolveFoods(userId, dateKey, meals);
       } catch (error) {
         if (!isLatest()) return;
         updateDay(userId, dateKey, (day) => ({
@@ -131,7 +100,7 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
         }));
       }
     },
-    [userId, updateDay, resolveFoods]
+    [userId, updateDay]
   );
 
   const logFood = useCallback<DiaryContextValue['logFood']>(
@@ -144,7 +113,7 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
 
   const updatePortion = useCallback<DiaryContextValue['updatePortion']>(
     async (entry, food, portion) => {
-      await mealService.updateMealItemPortion(entry.record, food, portion);
+      await mealService.updateMealItemPortion(entry.id, food, portion);
       await loadDay(entryDateKey(entry));
     },
     [loadDay]
@@ -190,8 +159,8 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo<DiaryContextValue>(
-    () => ({ days, foods, foregroundCount, loadDay, logFood, updatePortion, moveEntry, duplicateEntry, deleteEntry }),
-    [days, foods, foregroundCount, loadDay, logFood, updatePortion, moveEntry, duplicateEntry, deleteEntry]
+    () => ({ days, foregroundCount, loadDay, logFood, updatePortion, moveEntry, duplicateEntry, deleteEntry }),
+    [days, foregroundCount, loadDay, logFood, updatePortion, moveEntry, duplicateEntry, deleteEntry]
   );
 
   return <DiaryContext.Provider value={value}>{children}</DiaryContext.Provider>;

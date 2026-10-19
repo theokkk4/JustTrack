@@ -3,8 +3,8 @@
 -- Run in the Supabase SQL editor (or psql) against any JustTrack database.
 -- It creates two throwaway users, acts as each of them plus an anonymous
 -- client, and checks that nobody can see or change another user's data —
--- including through the log_meal / move_meal_item functions — and that
--- FatSecret diary rows can only ever hold IDs.
+-- including through the log_meal / move_meal_item functions — and that a
+-- diary row can't be saved without its nutrition.
 --
 -- It ALWAYS ends by raising an error that carries the report: that's what
 -- rolls everything back, so no test data is ever left behind. Look for
@@ -30,14 +30,14 @@ begin
   if n <> 2 then failures := failures + 1; end if;
   report := report || format('[%s] profiles auto-created=%s/2 ', case when n = 2 then 'ok' else 'FAIL' end, n);
 
-  -- User A logs a meal: one FatSecret item (IDs only) and one custom item.
+  -- User A logs a meal: one food from the USDA database and one custom food.
   execute 'set local role authenticated';
   perform set_config('request.jwt.claims', json_build_object('sub', user_a, 'role', 'authenticated')::text, true);
   meal_a := public.log_meal('lunch', now(), jsonb_build_array(
-    jsonb_build_object('source', 'fatsecret', 'external_food_id', '1641', 'external_serving_id', '4822', 'servings', 1.5, 'amount_unit', 'serving'),
+    jsonb_build_object('source', 'usda', 'external_food_id', '2705483', 'external_serving_id', 'portion:1 cup', 'food_name', 'Hot chocolate', 'servings', 1.5, 'amount_unit', 'serving', 'grams', 372, 'calories', 201, 'protein', 3.3, 'carbs', 42, 'fat', 2),
     jsonb_build_object('source', 'custom', 'food_name', 'Protein bar', 'grams', 60, 'calories', 210, 'protein', 20, 'carbs', 22, 'fat', 7)
   ));
-  select id into item_a from public.meal_items where meal_id = meal_a and source = 'fatsecret';
+  select id into item_a from public.meal_items where meal_id = meal_a and source = 'usda';
   insert into public.nutrition_goals (user_id, calorie_goal, protein_goal, carbs_goal, fat_goal) values (user_a, 2200, 150, 220, 70);
   insert into public.weight_entries (user_id, weight_kg) values (user_a, 80);
   insert into public.custom_foods (user_id, name, serving_size, calories) values (user_a, 'Protein bar', 60, 210);
@@ -46,15 +46,22 @@ begin
   if n <> 2 then failures := failures + 1; end if;
   report := report || format('[%s] A logs meal with 2 items=%s ', case when n = 2 then 'ok' else 'FAIL' end, n);
 
-  -- FatSecret terms: only IDs may be stored, so content alongside them is rejected.
+  -- Every row must carry its nutrition, and only known sources are accepted.
+  begin
+    perform public.log_meal('lunch', now(), jsonb_build_array(jsonb_build_object('source', 'usda', 'food_name', 'Chicken')));
+    failures := failures + 1;
+    report := report || '[FAIL] row without nutrition saved ';
+  exception when not_null_violation then
+    report := report || '[ok] row without nutrition: rejected ';
+  end;
   begin
     perform public.log_meal('lunch', now(), jsonb_build_array(
-      jsonb_build_object('source', 'fatsecret', 'external_food_id', '1641', 'external_serving_id', '4822', 'food_name', 'Chicken', 'calories', 165)
+      jsonb_build_object('source', 'fatsecret', 'food_name', 'Chicken', 'grams', 100, 'calories', 165, 'protein', 31, 'carbs', 0, 'fat', 3.6)
     ));
     failures := failures + 1;
-    report := report || '[FAIL] FatSecret row stored content ';
+    report := report || '[FAIL] unknown source saved ';
   exception when check_violation then
-    report := report || '[ok] FatSecret row with content: rejected ';
+    report := report || '[ok] unknown source: rejected ';
   end;
 
   -- User B must not see or touch any of it.
@@ -130,7 +137,7 @@ begin
     report := report || format('[ok] anon logs a meal: denied %s ', sqlstate);
   end;
 
-  -- A moves the FatSecret item to dinner, then deletes what's left: emptied meals disappear.
+  -- A moves the USDA item to dinner, then deletes what's left: emptied meals disappear.
   execute 'set local role authenticated';
   perform set_config('request.jwt.claims', json_build_object('sub', user_a, 'role', 'authenticated')::text, true);
   moved_meal := public.move_meal_item(item_a, 'dinner');

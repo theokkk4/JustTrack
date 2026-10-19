@@ -1,81 +1,88 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { searchFoods } from '@/services/foodService';
-import type { FoodSearchResult } from '@/types';
+import { rememberFoods } from '@/lib/food/foodStore';
+import { searchOpenFoodFacts } from '@/lib/food/openFoodFacts';
+import { searchUsdaFoods } from '@/lib/food/usdaDatabase';
+import type { FoodDetail } from '@/types';
 import { getErrorMessage } from '@/utils/errors';
 
 export const MIN_QUERY_LENGTH = 2;
-/** The search function serves pages 0–39. */
-const MAX_PAGES = 40;
+/** Packaged-food pages to offer before suggesting a more specific search. */
+const MAX_PAGES = 10;
 
-interface Results {
+interface Packaged {
   query: string;
-  results: FoodSearchResult[];
-  total: number;
+  foods: FoodDetail[];
   page: number;
+  pageCount: number;
   error: string | null;
 }
 
-function appendUnique(existing: FoodSearchResult[], next: FoodSearchResult[]): FoodSearchResult[] {
-  const seen = new Set(existing.map((result) => result.id));
-  return [...existing, ...next.filter((result) => !seen.has(result.id))];
+function appendUnique(existing: FoodDetail[], next: FoodDetail[]): FoodDetail[] {
+  const seen = new Set(existing.map((food) => food.id));
+  return [...existing, ...next.filter((food) => !seen.has(food.id))];
 }
 
 /**
- * Paged food search for an (already debounced) query. A new query cancels the
- * previous request; the last results stay visible while the next page loads.
+ * Two searches at once: the bundled USDA database (instant, offline) and
+ * Open Food Facts for packaged foods (online, paged). Either can come up
+ * empty or fail without affecting the other.
  */
 export function useFoodSearch(query: string) {
-  const [latest, setLatest] = useState<Results | null>(null);
+  const active = query.length >= MIN_QUERY_LENGTH;
+  const everyday = useMemo(() => (active ? searchUsdaFoods(query, 25) : []), [active, query]);
+
+  const [packaged, setPackaged] = useState<Packaged | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
-    if (query.length < MIN_QUERY_LENGTH) return;
+    if (!active) return;
     const controller = new AbortController();
-    searchFoods(query, 0, controller.signal)
-      .then((page) => setLatest({ query, results: page.results, total: page.totalResults, page: 0, error: null }))
+    searchOpenFoodFacts(query, 1, controller.signal)
+      .then((page) => {
+        rememberFoods(page.foods);
+        setPackaged({ query, foods: page.foods, page: 1, pageCount: page.pageCount, error: null });
+      })
       .catch((error: unknown) => {
-        if (!controller.signal.aborted) setLatest({ query, results: [], total: 0, page: 0, error: getErrorMessage(error) });
+        if (!controller.signal.aborted) setPackaged({ query, foods: [], page: 1, pageCount: 1, error: getErrorMessage(error) });
       });
     return () => controller.abort();
-  }, [query, attempt]);
+  }, [active, query, attempt]);
 
-  const current = latest?.query === query ? latest : null;
-  const status: 'idle' | 'loading' | 'error' | 'ready' =
-    query.length < MIN_QUERY_LENGTH ? 'idle' : !current ? 'loading' : current.error ? 'error' : 'ready';
-  const hasMore = Boolean(current && !current.error && current.results.length < current.total && current.page + 1 < MAX_PAGES);
+  const current = packaged?.query === query ? packaged : null;
+  const hasMore = Boolean(current && !current.error && current.page < Math.min(current.pageCount, MAX_PAGES));
 
   const loadMore = async () => {
     if (!current || !hasMore || loadingMore) return;
     setLoadingMore(true);
     try {
-      const next = await searchFoods(query, current.page + 1);
-      setLatest((previous) =>
+      const next = await searchOpenFoodFacts(query, current.page + 1);
+      rememberFoods(next.foods);
+      setPackaged((previous) =>
         previous?.query === query
-          ? { ...previous, page: current.page + 1, total: next.totalResults, results: appendUnique(previous.results, next.results) }
+          ? { ...previous, page: current.page + 1, pageCount: next.pageCount, foods: appendUnique(previous.foods, next.foods) }
           : previous
       );
     } catch {
-      // The footer offers the next page again on the next scroll; the first page's results stay usable.
+      // The first page is still usable; scrolling again retries.
     } finally {
       setLoadingMore(false);
     }
   };
 
-  const retry = () => {
-    setLatest(null);
-    setAttempt((count) => count + 1);
-  };
-
   return {
-    status,
-    // While a new query loads, keep showing the previous results rather than flashing to empty.
-    results: status === 'idle' ? [] : (current ?? latest)?.results ?? [],
-    error: current?.error ?? null,
+    active,
+    everyday,
+    packaged: current?.foods ?? [],
+    packagedStatus: !active ? 'idle' : !current ? 'loading' : current.error ? 'error' : 'ready',
+    packagedError: current?.error ?? null,
     hasMore,
     loadingMore,
     loadMore,
-    retry,
-  };
+    retryPackaged: () => {
+      setPackaged(null);
+      setAttempt((count) => count + 1);
+    },
+  } as const;
 }

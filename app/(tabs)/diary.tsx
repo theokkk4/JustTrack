@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { FatSecretAttribution } from '@/components/food/FatSecretAttribution';
 import { MealSectionCard } from '@/components/food/MealSectionCard';
 import { Banner } from '@/components/ui/Banner';
 import { DateSwitcher } from '@/components/ui/DateSwitcher';
@@ -62,14 +61,6 @@ export default function DiaryScreen() {
             onAction={() => void day.refresh()}
           />
         ) : null}
-        {day.unresolvedCount > 0 && day.foodsError ? (
-          <Banner
-            tone="warning"
-            message={`Some foods couldn’t load, so today’s totals may be low. ${day.foodsError}`}
-            actionLabel="Retry"
-            onAction={() => void day.refresh()}
-          />
-        ) : null}
 
         {day.sections.map((section) => (
           <MealSectionCard
@@ -81,8 +72,6 @@ export default function DiaryScreen() {
           />
         ))}
       </View>
-
-      {day.hasFatSecretContent ? <FatSecretAttribution style={styles.attribution} /> : null}
     </Screen>
   );
 }
@@ -93,5 +82,4 @@ const styles = StyleSheet.create({
   stat: { alignItems: 'center', gap: 2 },
   tabular: { fontVariant: ['tabular-nums'] },
   sections: { gap: Spacing.lg },
-  attribution: { marginTop: Spacing.xl },
 });

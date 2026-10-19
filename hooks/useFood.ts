@@ -1,39 +1,42 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { useDiary } from '@/contexts/DiaryContext';
-import { getFood } from '@/services/foodService';
+import { loadFood, peekFood } from '@/lib/food/foodStore';
+import type { FoodDetail } from '@/types';
 import { getErrorMessage } from '@/utils/errors';
 
 /**
- * One FatSecret food's details. Reads the shared in-memory cache (so a food
- * already in the diary shows instantly) and fetches it when missing.
+ * A food by key ("usda:…" or "off:…"). Built-in and already-seen foods are
+ * available immediately; anything else is fetched from Open Food Facts.
  */
-export function useFood(id: string | null | undefined) {
-  const { foods } = useDiary();
-  const food = id ? foods.get(id) : undefined;
-  const hasFood = food !== undefined;
-  const [failure, setFailure] = useState<{ id: string; message: string } | null>(null);
+export function useFood(key: string | null | undefined) {
+  const known = useMemo(() => (key ? peekFood(key) : null), [key]);
+  const [fetched, setFetched] = useState<{ key: string; food: FoodDetail | null; error: string | null } | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!id || hasFood) return;
+    if (!key || known) return;
     let cancelled = false;
-    getFood(id).catch((error: unknown) => {
-      if (!cancelled) setFailure({ id, message: getErrorMessage(error) });
-    });
+    loadFood(key)
+      .then((food) => {
+        if (!cancelled) setFetched({ key, food, error: food ? null : 'We couldn’t find that food.' });
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setFetched({ key, food: null, error: getErrorMessage(error) });
+      });
     return () => {
       cancelled = true;
     };
-  }, [id, hasFood, attempt]);
+  }, [key, known, attempt]);
 
-  const error = !hasFood && failure && failure.id === id ? failure.message : null;
+  const result = fetched && fetched.key === key ? fetched : null;
+  const food = known ?? result?.food ?? undefined;
 
   return {
     food,
-    loading: Boolean(id) && !hasFood && error === null,
-    error,
+    loading: Boolean(key) && !food && !result,
+    error: food ? null : (result?.error ?? null),
     retry: () => {
-      setFailure(null);
+      setFetched(null);
       setAttempt((count) => count + 1);
     },
   };

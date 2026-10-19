@@ -28,10 +28,10 @@ export async function logMeal(input: { mealType: MealType; eatenAt: Date; items:
   return data;
 }
 
-export async function updateMealItemPortion(record: MealItemRecord, food: FoodDetail, portion: StoredPortion): Promise<void> {
-  const changes = portionUpdate(record, food, portion);
+export async function updateMealItemPortion(itemId: string, food: FoodDetail, portion: StoredPortion): Promise<void> {
+  const changes = portionUpdate(food, portion);
   if (!changes) throw new Error('That amount doesn’t work for this food.');
-  const { error } = await supabase.from('meal_items').update(changes).eq('id', record.id);
+  const { error } = await supabase.from('meal_items').update(changes).eq('id', itemId);
   if (error) throw error;
 }
 
@@ -42,9 +42,7 @@ export async function moveMealItem(itemId: string, mealType: MealType): Promise<
 }
 
 export async function duplicateMealItem(record: MealItemRecord, mealType: MealType, eatenAt: Date): Promise<void> {
-  const item = recordToNewItem(record);
-  if (!item) throw new Error('This entry can’t be duplicated.');
-  await logMeal({ mealType, eatenAt, items: [item] });
+  await logMeal({ mealType, eatenAt, items: [recordToNewItem(record)] });
 }
 
 /** Deleting a meal's last item deletes the meal too (database trigger). */

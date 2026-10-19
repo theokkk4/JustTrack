@@ -1,142 +1,124 @@
+import type { FoodDetail, MealItemRecord } from '@/types';
 import type { Tables } from '@/types/database';
-import { mapMealItemRow, mapMealRow, recordToNewItem, toMealItemPayload } from '../records';
+import { mapMealItemRow, mapMealRow, newItemFromFood, portionUpdate, recordToNewItem, toMealItemPayload } from '../records';
+import { amountLabel, resolveMealItem, storedEntryAsFood } from '../resolve';
 
-function itemRow(overrides: Partial<Tables<'meal_items'>> = {}): Tables<'meal_items'> {
+const yogurt: FoodDetail = {
+  id: 'usda:1',
+  source: 'usda',
+  externalId: '1',
+  name: 'Yogurt, Greek, plain',
+  brand: null,
+  servings: [
+    { id: 'portion:1 container', description: '1 container (170 g)', metricAmount: 170, metricUnit: 'g', calories: 100, protein: 17, carbs: 6, fat: 0.7, isDefault: true },
+    { id: '100g', description: '100 g', metricAmount: 100, metricUnit: 'g', calories: 59, protein: 10, carbs: 3.6, fat: 0.4, isDefault: false },
+  ],
+};
+
+function row(overrides: Partial<Tables<'meal_items'>> = {}): Tables<'meal_items'> {
   return {
     id: 'item-1',
     meal_id: 'meal-1',
     user_id: 'user-1',
-    source: 'fatsecret',
-    external_food_id: '1641',
-    external_serving_id: '4822',
+    source: 'usda',
+    external_food_id: '1',
+    external_serving_id: 'portion:1 container',
     servings: 1.5,
     amount_unit: 'serving',
     is_estimate: false,
-    food_name: null,
+    food_name: 'Yogurt, Greek, plain',
     brand: null,
-    grams: null,
-    calories: null,
-    protein: null,
-    carbs: null,
-    fat: null,
-    created_at: '2026-09-25T12:00:00Z',
+    grams: 255,
+    calories: 150,
+    protein: 25.5,
+    carbs: 9,
+    fat: 1.1,
+    created_at: '2026-10-19T12:00:00Z',
     ...overrides,
   };
 }
 
-describe('mapMealItemRow', () => {
-  it('maps a FatSecret row to an IDs-only record', () => {
-    expect(mapMealItemRow(itemRow())).toEqual({
-      id: 'item-1',
-      mealId: 'meal-1',
-      source: 'fatsecret',
-      externalFoodId: '1641',
-      externalServingId: '4822',
-      servings: 1.5,
-      amountUnit: 'serving',
-      isEstimate: false,
-      foodName: null,
-      brand: null,
-      grams: null,
-      nutrition: null,
-      createdAt: '2026-09-25T12:00:00Z',
-    });
+describe('mapping rows', () => {
+  it('maps an item row, dropping unknown sources', () => {
+    expect(mapMealItemRow(row())).toMatchObject({ source: 'usda', foodName: 'Yogurt, Greek, plain', grams: 255, nutrition: { calories: 150 } });
+    expect(mapMealItemRow(row({ source: 'fatsecret' }))).toBeNull();
+    expect(mapMealItemRow(row({ amount_unit: 'cups' }))?.amountUnit).toBe('serving');
   });
 
-  it('keeps stored nutrition for other sources', () => {
-    const record = mapMealItemRow(
-      itemRow({ source: 'custom', external_food_id: null, external_serving_id: null, food_name: 'Protein bar', grams: 60, calories: 210, protein: 20, carbs: 22, fat: 7 })
-    );
-    expect(record?.nutrition).toEqual({ calories: 210, protein: 20, carbs: 22, fat: 7 });
-    expect(record?.foodName).toBe('Protein bar');
-  });
-
-  it('drops rows with an unknown source and defaults an unknown amount unit', () => {
-    expect(mapMealItemRow(itemRow({ source: 'mystery' }))).toBeNull();
-    expect(mapMealItemRow(itemRow({ amount_unit: 'cups' }))?.amountUnit).toBe('serving');
+  it('maps a meal and skips unknown meal types', () => {
+    const meal = { id: 'meal-1', user_id: 'u', name: null, meal_type: 'lunch', eaten_at: 'x', created_at: 'x', meal_items: [row()] };
+    expect(mapMealRow(meal)?.items).toHaveLength(1);
+    expect(mapMealRow({ ...meal, meal_type: 'brunch' })).toBeNull();
   });
 });
 
-describe('mapMealRow', () => {
-  it('maps the meal and its items, skipping unknown meal types', () => {
-    const row = {
-      id: 'meal-1',
-      user_id: 'user-1',
-      name: null,
-      meal_type: 'lunch',
-      eaten_at: '2026-09-25T12:00:00Z',
-      created_at: '2026-09-25T12:00:00Z',
-      meal_items: [itemRow(), itemRow({ id: 'bad', source: 'mystery' })],
-    };
-    const meal = mapMealRow(row);
-    expect(meal?.mealType).toBe('lunch');
-    expect(meal?.items.map((item) => item.id)).toEqual(['item-1']);
-    expect(mapMealRow({ ...row, meal_type: 'brunch' })).toBeNull();
-  });
-});
-
-describe('toMealItemPayload', () => {
-  it('sends nothing but IDs and the amount for FatSecret items', () => {
-    expect(
-      toMealItemPayload({ source: 'fatsecret', externalFoodId: '1641', externalServingId: '4822', servings: 0.70588235, amountUnit: 'g' })
-    ).toEqual({
-      source: 'fatsecret',
-      external_food_id: '1641',
-      external_serving_id: '4822',
-      servings: 0.7059,
-      amount_unit: 'g',
-      is_estimate: false,
-      food_name: null,
-      brand: null,
-      grams: null,
-      calories: null,
-      protein: null,
-      carbs: null,
-      fat: null,
+describe('logging a food', () => {
+  it('stores the chosen portion with its nutrition', () => {
+    expect(newItemFromFood(yogurt, { servingId: '100g', servings: 1.5, amountUnit: 'g' })).toMatchObject({
+      source: 'usda',
+      externalFoodId: '1',
+      externalServingId: '100g',
+      grams: 150,
+      nutrition: { calories: 88.5, protein: 15 },
     });
+    expect(newItemFromFood(yogurt, { servingId: 'nope', servings: 1, amountUnit: 'serving' })).toBeNull();
   });
 
-  it('sends rounded content for stored-content items', () => {
+  it('rounds the payload for the database', () => {
     const payload = toMealItemPayload({
-      source: 'ai_estimate',
-      foodName: '  Chicken burrito bowl ',
+      source: 'openfoodfacts',
+      externalFoodId: '0894700010137',
+      foodName: '  Nonfat Greek Yogurt ',
       brand: '',
-      servings: 1,
-      amountUnit: 'g',
-      grams: 412.44,
-      nutrition: { calories: 655.55, protein: 41.26, carbs: 70.04, fat: 21.96 },
-      isEstimate: true,
+      servings: 0.333333,
+      amountUnit: 'serving',
+      grams: 56.6666,
+      nutrition: { calories: 29.96, protein: 5.33, carbs: 2, fat: 0 },
     });
-    expect(payload).toMatchObject({
-      source: 'ai_estimate',
-      food_name: 'Chicken burrito bowl',
-      brand: null,
-      grams: 412.4,
-      calories: 655.6,
-      protein: 41.3,
-      carbs: 70,
-      fat: 22,
-      is_estimate: true,
-      external_serving_id: null,
-    });
+    expect(payload).toMatchObject({ food_name: 'Nonfat Greek Yogurt', brand: null, servings: 0.3333, grams: 56.7, calories: 30, protein: 5.3 });
   });
 });
 
-describe('recordToNewItem', () => {
-  it('copies a FatSecret entry as IDs and amount', () => {
-    const record = mapMealItemRow(itemRow());
-    expect(record && recordToNewItem(record)).toEqual({
-      source: 'fatsecret',
-      externalFoodId: '1641',
-      externalServingId: '4822',
-      servings: 1.5,
-      amountUnit: 'serving',
-      isEstimate: false,
+describe('editing an entry', () => {
+  it('recalculates nutrition and remembers the serving', () => {
+    expect(portionUpdate(yogurt, { servingId: 'portion:1 container', servings: 2, amountUnit: 'serving' })).toEqual({
+      servings: 2,
+      amount_unit: 'serving',
+      external_serving_id: 'portion:1 container',
+      grams: 340,
+      calories: 200,
+      protein: 34,
+      carbs: 12,
+      fat: 1.4,
     });
   });
 
-  it('refuses to copy an incomplete row', () => {
-    const record = mapMealItemRow(itemRow({ external_serving_id: null }));
-    expect(record && recordToNewItem(record)).toBeNull();
+  it('rescales any entry from its own stored values', () => {
+    const record = mapMealItemRow(row()) as MealItemRecord;
+    const food = storedEntryAsFood(record);
+    expect(food?.servings[0]).toMatchObject({ id: 'entry', metricAmount: 170, calories: 100 });
+    const update = food && portionUpdate(food, { servingId: 'entry', servings: 3, amountUnit: 'serving' });
+    expect(update).toMatchObject({ servings: 3, grams: 510, calories: 300 });
+    expect(update).not.toHaveProperty('external_serving_id');
+  });
+
+  it('duplicates an entry exactly', () => {
+    const record = mapMealItemRow(row()) as MealItemRecord;
+    expect(recordToNewItem(record)).toMatchObject({ source: 'usda', foodName: record.foodName, servings: 1.5, nutrition: record.nutrition });
+  });
+});
+
+describe('amount labels', () => {
+  it('reads naturally for portions, grams, and plain servings', () => {
+    expect(amountLabel({ amountUnit: 'serving', servings: 1.5, grams: 255, externalServingId: 'portion:1 container' })).toBe('1.5 × 1 container');
+    expect(amountLabel({ amountUnit: 'serving', servings: 1, grams: 170, externalServingId: 'portion:1 container' })).toBe('1 container');
+    expect(amountLabel({ amountUnit: 'g', servings: 1.5, grams: 150, externalServingId: '100g' })).toBe('150 g');
+    expect(amountLabel({ amountUnit: 'serving', servings: 2, grams: 0, externalServingId: null })).toBe('2 servings');
+  });
+
+  it('resolves an entry for display', () => {
+    const record = mapMealItemRow(row()) as MealItemRecord;
+    const meal = { id: 'meal-1', userId: 'u', name: null, mealType: 'lunch' as const, eatenAt: 'x', createdAt: 'x' };
+    expect(resolveMealItem(record, meal)).toMatchObject({ foodName: 'Yogurt, Greek, plain', amountLabel: '1.5 × 1 container', calories: 150, mealType: 'lunch' });
   });
 });

@@ -18,7 +18,8 @@ const rice: FoodDetail = {
   id: '4501',
   name: 'White Rice',
   brand: null,
-  type: 'generic',
+  source: 'usda',
+  externalId: '1',
   servings: [
     serving({ id: 'cup', description: '1 cup', metricAmount: 158, metricUnit: 'g', calories: 206, protein: 4.3, carbs: 44.5, fat: 0.4, isDefault: true }),
     serving({ id: '100g', description: '100 g', metricAmount: 100, metricUnit: 'g', calories: 130, protein: 2.7, carbs: 28.2, fat: 0.3 }),
@@ -30,7 +31,8 @@ const bar: FoodDetail = {
   id: '99',
   name: 'Granola Bar',
   brand: 'Nature Valley',
-  type: 'brand',
+  source: 'openfoodfacts',
+  externalId: '0000000000099',
   servings: [serving({ id: 'bar', description: '1 bar', metricAmount: 42.5, metricUnit: 'g', calories: 190, isDefault: true })],
 };
 
@@ -38,7 +40,8 @@ const soda: FoodDetail = {
   id: '7',
   name: 'Cola',
   brand: null,
-  type: 'generic',
+  source: 'usda',
+  externalId: '1',
   servings: [serving({ id: 'can', description: '1 can', metricAmount: 355, metricUnit: 'ml', calories: 140, isDefault: true })],
 };
 
@@ -46,7 +49,8 @@ const mystery: FoodDetail = {
   id: '1',
   name: 'Soup',
   brand: null,
-  type: 'generic',
+  source: 'usda',
+  externalId: '1',
   servings: [serving({ id: 'bowl', description: '1 bowl', isDefault: true })],
 };
 

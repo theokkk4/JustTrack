@@ -3,7 +3,7 @@ import { useLocalSearchParams, useNavigation } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
-import { FatSecretAttribution } from '@/components/food/FatSecretAttribution';
+import { FoodDataAttribution } from '@/components/food/FoodDataAttribution';
 import { MealTypePicker } from '@/components/food/MealTypePicker';
 import { NutritionSummary } from '@/components/food/NutritionSummary';
 import { PortionEditor } from '@/components/food/PortionEditor';
@@ -17,6 +17,7 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { useFood } from '@/hooks/useFood';
 import { usePortion } from '@/hooks/usePortion';
+import { newItemFromFood } from '@/lib/diary/records';
 import type { MealType } from '@/types';
 import { formatRelativeDay, parseDateKey, toDateKey } from '@/utils/date';
 import { getErrorMessage } from '@/utils/errors';
@@ -41,21 +42,12 @@ export default function AddFoodScreen() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const add = async () => {
-    if (!food || !portion.stored) return;
+    const item = food && portion.stored ? newItemFromFood(food, portion.stored) : null;
+    if (!item) return;
     setSaving(true);
     setSaveError(null);
     try {
-      await logFood({
-        dateKey,
-        mealType,
-        item: {
-          source: 'fatsecret',
-          externalFoodId: food.id,
-          externalServingId: portion.stored.servingId,
-          servings: portion.stored.servings,
-          amountUnit: portion.stored.amountUnit,
-        },
-      });
+      await logFood({ dateKey, mealType, item });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Close the whole Add Food modal, not just this screen.
       navigation.getParent()?.goBack();
@@ -117,7 +109,7 @@ export default function AddFoodScreen() {
 
       <Button label={`Add to ${MEAL_TYPE_META[mealType].label}`} icon="plus" onPress={add} loading={saving} disabled={!portion.stored} />
 
-      <FatSecretAttribution />
+      <FoodDataAttribution />
     </ScrollView>
   );
 }

@@ -1,25 +1,26 @@
-import { isFresh, type FoodSnapshot } from '@/lib/food/foodCache';
-import { describePortion, portionNutrition } from '@/lib/nutrition/portion';
-import type { CachedFood, FoodDetail, FoodServing, Meal, MealItem, MealItemRecord, MealRecord, MealWithItems, NutritionValues } from '@/types';
+import type { FoodDetail, FoodServing, Meal, MealItem, MealItemRecord, MealRecord, MealWithItems } from '@/types';
 import { formatQuantity } from '@/utils/quantity';
 
-/**
- * Turns stored diary records into what the UI shows. FatSecret rows are
- * looked up in the (under-24h) food snapshot; every other row carries its
- * own content. Pure: same records + foods + time → same result.
- */
-
-const ZERO: NutritionValues = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+/** Turns stored diary records into what the UI shows. Pure: same records → same result. */
 
 function servingCount(servings: number): string {
   return servings === 1 ? '1 serving' : `${formatQuantity(servings)} servings`;
 }
 
-/** Stored-content entries (custom, Open Food Facts, AI estimates) as a one-serving "food" for the portion editor. */
+export function amountLabel(record: Pick<MealItemRecord, 'amountUnit' | 'grams' | 'servings' | 'externalServingId'>): string {
+  const grams = record.grams > 0 ? record.grams : null;
+  if (record.amountUnit !== 'serving' && grams !== null) return `${formatQuantity(grams, 1)} ${record.amountUnit}`;
+  // USDA portions are stored as "portion:1 cup", which reads better than "1 serving".
+  const portion = record.externalServingId?.startsWith('portion:') ? record.externalServingId.slice('portion:'.length) : null;
+  if (portion) return record.servings === 1 ? portion : `${formatQuantity(record.servings)} × ${portion}`;
+  return `${servingCount(record.servings)}${grams !== null ? ` · ${formatQuantity(grams, 0)} g` : ''}`;
+}
+
+/** Any entry as a one-serving "food", so the portion editor can rescale it from its stored values. */
 export function storedEntryAsFood(record: MealItemRecord): FoodDetail | null {
-  if (!record.foodName || !record.nutrition || !(record.servings > 0)) return null;
+  if (!(record.servings > 0)) return null;
   const per = (value: number) => value / record.servings;
-  const gramsPerServing = record.grams !== null && record.grams > 0 ? per(record.grams) : null;
+  const gramsPerServing = record.grams > 0 ? per(record.grams) : null;
   const serving: FoodServing = {
     id: 'entry',
     description: gramsPerServing ? `1 serving (${formatQuantity(gramsPerServing, 1)} g)` : '1 serving',
@@ -31,76 +32,33 @@ export function storedEntryAsFood(record: MealItemRecord): FoodDetail | null {
     fat: per(record.nutrition.fat),
     isDefault: true,
   };
-  return { id: record.id, name: record.foodName, brand: record.brand, type: 'generic', servings: [serving] };
+  return {
+    id: `entry:${record.id}`,
+    source: record.source === 'openfoodfacts' ? 'openfoodfacts' : 'usda',
+    externalId: record.externalFoodId ?? record.id,
+    name: record.foodName,
+    brand: record.brand,
+    servings: [serving],
+  };
 }
 
-function freshFood(foods: FoodSnapshot, id: string | null, now: number): CachedFood | undefined {
-  const food = id ? foods.get(id) : undefined;
-  return food && isFresh(food, now) ? food : undefined;
-}
-
-export function resolveMealItem(record: MealItemRecord, meal: Meal, foods: FoodSnapshot, now: number): MealItem {
-  const base = {
+export function resolveMealItem(record: MealItemRecord, meal: Meal): MealItem {
+  return {
     id: record.id,
     mealId: meal.id,
     mealType: meal.mealType,
     eatenAt: meal.eatenAt,
     source: record.source,
+    foodName: record.foodName,
+    brand: record.brand,
+    amountLabel: amountLabel(record),
     isEstimate: record.isEstimate,
     record,
     createdAt: record.createdAt,
-  };
-
-  if (record.source === 'fatsecret') {
-    const food = freshFood(foods, record.externalFoodId, now);
-    const serving = food?.servings.find((candidate) => candidate.id === record.externalServingId);
-    if (food && serving) {
-      return {
-        ...base,
-        ...portionNutrition(serving, record.servings),
-        foodName: food.name,
-        brand: food.brand,
-        amountLabel: describePortion(serving, record.servings, record.amountUnit),
-        resolved: true,
-      };
-    }
-    return {
-      ...base,
-      ...ZERO,
-      foodName: food?.name ?? 'Food details unavailable',
-      brand: food?.brand ?? null,
-      amountLabel: servingCount(record.servings),
-      resolved: false,
-    };
-  }
-
-  const grams = record.grams !== null && record.grams > 0 ? record.grams : null;
-  return {
-    ...base,
-    ...(record.nutrition ?? ZERO),
-    foodName: record.foodName ?? 'Unnamed food',
-    brand: record.brand,
-    amountLabel:
-      record.amountUnit !== 'serving' && grams !== null
-        ? `${formatQuantity(grams, 1)} ${record.amountUnit}`
-        : `${servingCount(record.servings)}${grams !== null ? ` · ${formatQuantity(grams, 0)} g` : ''}`,
-    resolved: record.nutrition !== null,
+    ...record.nutrition,
   };
 }
 
-export function resolveMeals(meals: readonly MealRecord[], foods: FoodSnapshot, now: number): MealWithItems[] {
-  return meals.map((meal) => ({ ...meal, items: meal.items.map((item) => resolveMealItem(item, meal, foods, now)) }));
-}
-
-/** FatSecret food IDs in these meals that aren't in the snapshot (or have gone stale). */
-export function missingFoodIds(meals: readonly MealRecord[], foods: FoodSnapshot, now: number): string[] {
-  const ids = new Set<string>();
-  for (const meal of meals) {
-    for (const item of meal.items) {
-      if (item.source === 'fatsecret' && item.externalFoodId && !freshFood(foods, item.externalFoodId, now)) {
-        ids.add(item.externalFoodId);
-      }
-    }
-  }
-  return [...ids];
+export function resolveMeals(meals: readonly MealRecord[]): MealWithItems[] {
+  return meals.map((meal) => ({ ...meal, items: meal.items.map((item) => resolveMealItem(item, meal)) }));
 }

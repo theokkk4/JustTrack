@@ -62,40 +62,22 @@ export type Database = {
         }
         Relationships: []
       }
-      fatsecret_food_cache: {
-        Row: {
-          fetched_at: string
-          food_id: string
-          payload: Json
-        }
-        Insert: {
-          fetched_at?: string
-          food_id: string
-          payload: Json
-        }
-        Update: {
-          fetched_at?: string
-          food_id?: string
-          payload?: Json
-        }
-        Relationships: []
-      }
       meal_items: {
         Row: {
           amount_unit: string
           brand: string | null
-          calories: number | null
-          carbs: number | null
+          calories: number
+          carbs: number
           created_at: string
           external_food_id: string | null
           external_serving_id: string | null
-          fat: number | null
-          food_name: string | null
-          grams: number | null
+          fat: number
+          food_name: string
+          grams: number
           id: string
           is_estimate: boolean
           meal_id: string
-          protein: number | null
+          protein: number
           servings: number
           source: string
           user_id: string
@@ -103,18 +85,18 @@ export type Database = {
         Insert: {
           amount_unit?: string
           brand?: string | null
-          calories?: number | null
-          carbs?: number | null
+          calories: number
+          carbs: number
           created_at?: string
           external_food_id?: string | null
           external_serving_id?: string | null
-          fat?: number | null
-          food_name?: string | null
-          grams?: number | null
+          fat: number
+          food_name: string
+          grams: number
           id?: string
           is_estimate?: boolean
           meal_id: string
-          protein?: number | null
+          protein: number
           servings?: number
           source: string
           user_id: string
@@ -122,18 +104,18 @@ export type Database = {
         Update: {
           amount_unit?: string
           brand?: string | null
-          calories?: number | null
-          carbs?: number | null
+          calories?: number
+          carbs?: number
           created_at?: string
           external_food_id?: string | null
           external_serving_id?: string | null
-          fat?: number | null
-          food_name?: string | null
-          grams?: number | null
+          fat?: number
+          food_name?: string
+          grams?: number
           id?: string
           is_estimate?: boolean
           meal_id?: string
-          protein?: number | null
+          protein?: number
           servings?: number
           source?: string
           user_id?: string
@@ -254,17 +236,17 @@ export type Database = {
         Row: {
           amount_unit: string
           brand: string | null
-          calories: number | null
-          carbs: number | null
+          calories: number
+          carbs: number
           created_at: string
           external_food_id: string | null
           external_serving_id: string | null
-          fat: number | null
-          food_name: string | null
-          grams: number | null
+          fat: number
+          food_name: string
+          grams: number
           id: string
           is_estimate: boolean
-          protein: number | null
+          protein: number
           saved_meal_id: string
           servings: number
           source: string
@@ -273,17 +255,17 @@ export type Database = {
         Insert: {
           amount_unit?: string
           brand?: string | null
-          calories?: number | null
-          carbs?: number | null
+          calories: number
+          carbs: number
           created_at?: string
           external_food_id?: string | null
           external_serving_id?: string | null
-          fat?: number | null
-          food_name?: string | null
-          grams?: number | null
+          fat: number
+          food_name: string
+          grams: number
           id?: string
           is_estimate?: boolean
-          protein?: number | null
+          protein: number
           saved_meal_id: string
           servings?: number
           source: string
@@ -292,17 +274,17 @@ export type Database = {
         Update: {
           amount_unit?: string
           brand?: string | null
-          calories?: number | null
-          carbs?: number | null
+          calories?: number
+          carbs?: number
           created_at?: string
           external_food_id?: string | null
           external_serving_id?: string | null
-          fat?: number | null
-          food_name?: string | null
-          grams?: number | null
+          fat?: number
+          food_name?: string
+          grams?: number
           id?: string
           is_estimate?: boolean
-          protein?: number | null
+          protein?: number
           saved_meal_id?: string
           servings?: number
           source?: string
