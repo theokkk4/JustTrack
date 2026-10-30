@@ -81,19 +81,29 @@ export default function TodayScreen() {
 
         <Card style={styles.card}>
           <ThemedText variant="headline">Calories by meal</ThemedText>
-          {sections.map((section) => (
-            <View key={section.mealType} style={styles.barRow} accessible accessibilityLabel={`${MEAL_TYPE_META[section.mealType].label} ${formatNumber(section.totals.calories)} calories`}>
-              <ThemedText variant="subhead" style={styles.barLabel}>
-                {MEAL_TYPE_META[section.mealType].label}
-              </ThemedText>
-              <View style={[styles.barTrack, { backgroundColor: colors.backgroundSecondary }]}>
-                <View style={[styles.barFill, { width: `${Math.round((section.totals.calories / maxMeal) * 100)}%`, backgroundColor: colors.accent }]} />
-              </View>
-              <ThemedText variant="subheadEmphasized" style={[styles.tabular, styles.barValue]}>
-                {formatNumber(section.totals.calories)}
-              </ThemedText>
-            </View>
-          ))}
+          <View style={styles.meals}>
+            {sections.map((section) => {
+              const share = section.totals.calories / Math.max(totals.calories, 1);
+              return (
+                <View key={section.mealType} style={styles.mealRow} accessible accessibilityLabel={`${MEAL_TYPE_META[section.mealType].label} ${formatNumber(section.totals.calories)} calories`}>
+                  <View style={styles.mealHead}>
+                    <ThemedText variant="subhead">{MEAL_TYPE_META[section.mealType].label}</ThemedText>
+                    <View style={styles.mealValue}>
+                      <ThemedText variant="subheadEmphasized" style={styles.tabular}>
+                        {formatNumber(section.totals.calories)}
+                      </ThemedText>
+                      <ThemedText variant="caption1" color="tertiary" style={styles.tabular}>
+                        {section.totals.calories > 0 ? ` · ${Math.round(share * 100)}%` : ''}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <View style={[styles.barTrack, { backgroundColor: colors.accentMuted }]}>
+                    <View style={[styles.barFill, { width: `${Math.round((section.totals.calories / maxMeal) * 100)}%`, backgroundColor: colors.accent }]} />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         </Card>
 
         <Card style={styles.card}>
@@ -101,7 +111,7 @@ export default function TodayScreen() {
           <View style={styles.week} accessible accessibilityLabel={week.map((day, index) => `${day.toLocaleDateString('en-US', { weekday: 'long' })} ${formatNumber(weekCalories[index])} calories`).join(', ')}>
             {week.map((day, index) => (
               <View key={day.toISOString()} style={styles.weekDay}>
-                <View style={[styles.weekTrack, { backgroundColor: colors.backgroundSecondary }]}>
+                <View style={[styles.weekTrack, { backgroundColor: colors.accentMuted }]}>
                   <View style={[styles.weekFill, { height: `${Math.round((weekCalories[index] / maxDay) * 100)}%`, backgroundColor: index === 6 ? colors.accent : colors.gradientMiddle }]} />
                 </View>
                 <ThemedText variant="caption2" color={index === 6 ? 'primary' : 'secondary'}>
@@ -129,11 +139,12 @@ const styles = StyleSheet.create({
   card: { gap: Spacing.sm },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   scoreRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.xs },
-  barRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  barLabel: { width: 76 },
-  barTrack: { flex: 1, height: 10, borderRadius: Radii.full, overflow: 'hidden' },
+  meals: { gap: Spacing.md, marginTop: Spacing.xs },
+  mealRow: { gap: Spacing.xs + 2 },
+  mealHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Spacing.md },
+  mealValue: { flexDirection: 'row', alignItems: 'baseline', flexShrink: 0 },
+  barTrack: { height: 8, borderRadius: Radii.full, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: Radii.full },
-  barValue: { width: 48, textAlign: 'right' },
   week: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.sm, height: 110, paddingTop: Spacing.xs },
   weekDay: { flex: 1, alignItems: 'center', gap: Spacing.xs },
   weekTrack: { flex: 1, width: '100%', borderRadius: Radii.md, overflow: 'hidden', justifyContent: 'flex-end' },

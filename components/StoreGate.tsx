@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 
+import { LoadingScreen } from '@/components/LoadingScreen';
+
 import { logStore } from '@/lib/log/logStore';
 import { settingsStore } from '@/lib/settings/settingsStore';
 
-/** Holds the first frame until the on-device log and settings have been read. */
+/** Shows the loading screen until the on-device log and settings have been read. */
 export function StoreGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(() => logStore.isHydrated() && settingsStore.isHydrated());
 
@@ -17,5 +19,5 @@ export function StoreGate({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  return ready ? <>{children}</> : null;
+  return ready ? <>{children}</> : <LoadingScreen />;
 }

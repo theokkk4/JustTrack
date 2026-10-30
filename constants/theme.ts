@@ -41,6 +41,7 @@ export interface ThemeColors {
   gradientMiddle: string;
   gradientEnd: string;
   tabBarBackground: string;
+  tabBarBorder: string;
   tabIconDefault: string;
   tabIconSelected: string;
   fab: string;
@@ -58,7 +59,7 @@ export const Colors: Record<ColorScheme, ThemeColors> = {
     border: '#E9E6F4',
     text: '#17142B',
     textSecondary: '#6F6B87',
-    textTertiary: '#A6A2BA',
+    textTertiary: '#8F8BA8',
     textInverse: '#FFFFFF',
     onGradient: '#FFFFFF',
     onGradientMuted: 'rgba(255,255,255,0.72)',
@@ -76,7 +77,8 @@ export const Colors: Record<ColorScheme, ThemeColors> = {
     gradientMiddle: '#A98EFF',
     gradientEnd: '#FFFFFF',
     tabBarBackground: '#FFFFFF',
-    tabIconDefault: '#B3AFC7',
+    tabBarBorder: '#E6E3F2',
+    tabIconDefault: '#7E7A99',
     tabIconSelected: '#17142B',
     fab: '#17142B',
     fabIcon: '#FFFFFF',
@@ -91,7 +93,7 @@ export const Colors: Record<ColorScheme, ThemeColors> = {
     border: '#2B2742',
     text: '#F4F2FF',
     textSecondary: '#A9A5C4',
-    textTertiary: '#6F6B88',
+    textTertiary: '#8E8AAB',
     textInverse: '#17142B',
     onGradient: '#FFFFFF',
     onGradientMuted: 'rgba(255,255,255,0.7)',
@@ -108,8 +110,9 @@ export const Colors: Record<ColorScheme, ThemeColors> = {
     gradientStart: '#4B2EDB',
     gradientMiddle: '#2A1F6E',
     gradientEnd: '#0F0D1A',
-    tabBarBackground: '#13111F',
-    tabIconDefault: '#5E5A78',
+    tabBarBackground: '#1C1930',
+    tabBarBorder: '#363152',
+    tabIconDefault: '#B8B3D6',
     tabIconSelected: '#F4F2FF',
     fab: '#F4F2FF',
     fabIcon: '#17142B',

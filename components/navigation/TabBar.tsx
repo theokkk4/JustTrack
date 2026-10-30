@@ -12,7 +12,7 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 
 /**
  * The tab bar: a floating white pill with four round icon buttons and, in
- * the middle, the one that matters — a black + that starts logging. The
+ * the middle, the one that matters — a search button that starts logging. The
  * selected tab is a dark circle. Composed inline in app/(tabs)/_layout.tsx
  * because expo-router/ui reads the TabTriggers there.
  */
@@ -24,7 +24,7 @@ export function TabBarContainer({ style, children, ref, ...rest }: ViewProps & {
   return (
     // TabList passes a row layout; ours comes last so the pill fills the width.
     <View {...rest} ref={ref} accessibilityRole="tablist" style={[style, styles.container, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
-      <View style={[styles.pill, shadows.lg, { backgroundColor: colors.tabBarBackground, borderColor: colors.border }]}>{children}</View>
+      <View style={[styles.pill, shadows.lg, { backgroundColor: colors.tabBarBackground, borderColor: colors.tabBarBorder }]}>{children}</View>
     </View>
   );
 }
@@ -41,7 +41,7 @@ export function TabBarButton({ icon, activeIcon, label, isFocused, onPress, styl
   React.useEffect(() => {
     focus.set(withSpring(isFocused ? 1 : 0, { damping: 14, stiffness: 220 }));
   }, [focus, isFocused]);
-  const circle = useAnimatedStyle(() => ({ transform: [{ scale: 0.82 + focus.get() * 0.18 }], opacity: 0.4 + focus.get() * 0.6 }));
+  const circle = useAnimatedStyle(() => ({ transform: [{ scale: 0.82 + focus.get() * 0.18 }], opacity: 0.85 + focus.get() * 0.15 }));
 
   return (
     <Pressable
@@ -64,7 +64,7 @@ export function TabBarButton({ icon, activeIcon, label, isFocused, onPress, styl
   );
 }
 
-/** The + in the middle of the bar: opens Add Food for whichever meal fits the time of day. */
+/** The search button in the middle of the bar: opens Add Food for whichever meal fits the time of day. */
 export function AddButton() {
   const router = useRouter();
   const { colors, shadows } = useAppTheme();
@@ -78,9 +78,10 @@ export function AddButton() {
         }}
         accessibilityRole="button"
         accessibilityLabel="Add food"
+        accessibilityHint="Search foods, brands, and restaurant menus"
         style={({ pressed }) => [styles.fab, shadows.md, { backgroundColor: colors.fab, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
       >
-        <AppIcon name="plus" size={26} color={colors.fabIcon} weight="semibold" />
+        <AppIcon name="search" size={24} color={colors.fabIcon} weight="bold" />
       </Pressable>
     </View>
   );
