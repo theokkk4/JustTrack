@@ -32,6 +32,11 @@ const LOGOS: Record<string, ImageSourcePropType> = {
   'Insomnia Cookies': require('@/assets/logos/insomnia-cookies.png'),
   Freshens: require('@/assets/logos/freshens.png'),
   "Hangry Joe's": require('@/assets/logos/hangry-joes.png'),
+  "Jersey Mike's": require('@/assets/logos/jersey-mikes.png'),
+  "Raising Cane's": require('@/assets/logos/raising-canes.png'),
+  "Auntie Anne's": require('@/assets/logos/auntie-annes.png'),
+  "Applebee's": require('@/assets/logos/applebees.png'),
+  '7-Eleven': require('@/assets/logos/7-eleven.png'),
 };
 
 /** Browse order: the biggest chains first, campus favourites last. */
