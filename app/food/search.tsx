@@ -85,7 +85,7 @@ export default function FoodSearchScreen() {
       <SectionList
         sections={sections}
         keyExtractor={(food) => food.id}
-        renderItem={({ item }) => <FoodSearchRow food={item} onPress={() => choose(item)} />}
+        renderItem={({ item }) => <FoodSearchRow food={item} onPress={() => choose(item)} disambiguate={search.isAmbiguous(item)} />}
         renderSectionHeader={({ section }) => (
           <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
             <ThemedText variant="footnote" color="secondary" style={styles.sectionTitle}>

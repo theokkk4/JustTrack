@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { dedupeFoods } from '@/lib/food/dedupe';
 import { rememberFoods } from '@/lib/food/foodStore';
 import { searchOpenFoodFacts } from '@/lib/food/openFoodFacts';
 import { searchUsdaFoods } from '@/lib/food/usdaDatabase';
@@ -18,9 +19,9 @@ interface Packaged {
   error: string | null;
 }
 
+/** Later pages repeat earlier products under other barcodes; the list stays deduplicated as it grows. */
 function appendUnique(existing: FoodDetail[], next: FoodDetail[]): FoodDetail[] {
-  const seen = new Set(existing.map((food) => food.id));
-  return [...existing, ...next.filter((food) => !seen.has(food.id))];
+  return dedupeFoods([...existing, ...next]);
 }
 
 /**
@@ -51,6 +52,15 @@ export function useFoodSearch(query: string) {
   }, [active, query, attempt]);
 
   const current = packaged?.query === query ? packaged : null;
+  // Products that share a name and brand but differ in nutrition get their macros shown so they can be told apart.
+  const ambiguous = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const food of current?.foods ?? []) {
+      const key = `${food.name.toLowerCase()}|${(food.brand ?? '').toLowerCase()}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return new Set([...counts].filter(([, count]) => count > 1).map(([key]) => key));
+  }, [current?.foods]);
   const hasMore = Boolean(current && !current.error && current.page < Math.min(current.pageCount, MAX_PAGES));
 
   const loadMore = async () => {
@@ -75,6 +85,7 @@ export function useFoodSearch(query: string) {
     active,
     everyday,
     packaged: current?.foods ?? [],
+    isAmbiguous: (food: FoodDetail) => ambiguous.has(`${food.name.toLowerCase()}|${(food.brand ?? '').toLowerCase()}`),
     packagedStatus: !active ? 'idle' : !current ? 'loading' : current.error ? 'error' : 'ready',
     packagedError: current?.error ?? null,
     hasMore,

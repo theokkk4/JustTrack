@@ -30,3 +30,18 @@ describe('normalizeOffProduct', () => {
     expect(normalizeOffProduct({ code: '123456789', product_name: 'X', nutriments: { 'energy-kcal_100g': 4000 } })).toBeNull();
   });
 });
+
+describe('displayName', () => {
+  it('fills in what a brand-only title is from the generic name or category', () => {
+    const base = { code: '1234567890', nutriments: { 'energy-kcal_100g': 60 } };
+    expect(normalizeOffProduct({ ...base, product_name: 'Chobani', brands: 'Chobani', generic_name: 'Nonfat Greek yogurt' })?.name).toBe('Chobani nonfat Greek yogurt');
+    expect(normalizeOffProduct({ ...base, product_name: 'Chobani', brands: 'Chobani', categories_tags: ['en:dairies', 'en:yogurts', 'en:greek-yogurts'] })?.name).toBe('Chobani greek yogurts');
+    expect(normalizeOffProduct({ ...base, product_name: 'Flip Peanut Butter Dream', brands: 'Chobani', generic_name: 'Yogurt' })?.name).toBe('Flip Peanut Butter Dream');
+    expect(normalizeOffProduct({ ...base, product_name: 'Chobani', brands: 'Chobani' })?.name).toBe('Chobani');
+  });
+
+  it('keeps the pack size as a detail', () => {
+    const food = normalizeOffProduct({ code: '1234567890', product_name: 'Oat milk', brands: 'Oatly', quantity: '1 L', nutriments: { 'energy-kcal_100g': 46 } });
+    expect(food?.detail).toBe('1 L');
+  });
+});

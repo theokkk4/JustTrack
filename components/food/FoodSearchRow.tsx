@@ -13,12 +13,15 @@ import { formatNumber } from '@/utils/format';
 interface FoodSearchRowProps {
   food: FoodDetail;
   onPress: () => void;
+  /** Other results share this name; show the macros so the user can tell them apart. */
+  disambiguate?: boolean;
 }
 
-export function FoodSearchRow({ food, onPress }: FoodSearchRowProps) {
+export function FoodSearchRow({ food, onPress, disambiguate = false }: FoodSearchRowProps) {
   const { colors } = useAppTheme();
   const serving = defaultServing(food);
-  const detail = [food.brand, serving.description].filter(Boolean).join(' · ');
+  const macros = `P ${formatNumber(serving.protein)} · C ${formatNumber(serving.carbs)} · F ${formatNumber(serving.fat)} g`;
+  const detail = [food.brand, food.detail, disambiguate ? macros : null, serving.description].filter(Boolean).join(' · ');
   const calories = `${formatNumber(serving.calories)} cal`;
 
   return (

@@ -54,6 +54,8 @@ export interface FoodDetail {
   category?: string | null;
   /** A product photo, when Open Food Facts has one. */
   imageUrl?: string | null;
+  /** Pack size or variant that tells near-identical products apart, e.g. "150 g" or "5.3 oz cup". */
+  detail?: string | null;
   servings: FoodServing[];
 }
 

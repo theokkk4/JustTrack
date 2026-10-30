@@ -8,7 +8,7 @@
  */
 
 const SEARCH_URL = 'https://search.openfoodfacts.org/search';
-const FIELDS = 'code,product_name,brands,nutriments,serving_size,serving_quantity,serving_quantity_unit,image_front_url';
+const FIELDS = 'code,product_name,generic_name,brands,quantity,categories_tags,nutriments,serving_size,serving_quantity,serving_quantity_unit,image_front_url';
 const USER_AGENT = 'JustTrack/1.0 (open source; https://github.com/theokkk4/JustTrack)';
 const PAGE_SIZE = 20;
 

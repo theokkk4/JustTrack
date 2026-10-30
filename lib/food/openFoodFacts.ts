@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 
 import { REPOSITORY_URL } from '@/constants/brand';
 import type { FoodDetail, FoodServing, MetricUnit } from '@/types';
+import { dedupeFoods, sortByCompleteness } from './dedupe';
 
 /**
  * Open Food Facts: a free, open database of packaged foods (ODbL). No API key.
@@ -13,7 +14,7 @@ import type { FoodDetail, FoodServing, MetricUnit } from '@/types';
 const SEARCH_URL = 'https://search.openfoodfacts.org/search';
 const PROXY_SEARCH_URL = `${process.env.EXPO_PUBLIC_API_BASE_URL ?? ''}/api/foods`;
 const PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product';
-const FIELDS = 'code,product_name,brands,nutriments,serving_size,serving_quantity,serving_quantity_unit,image_front_url';
+const FIELDS = 'code,product_name,generic_name,brands,quantity,categories_tags,nutriments,serving_size,serving_quantity,serving_quantity_unit,image_front_url';
 export const OFF_PAGE_SIZE = 20;
 
 /** OFF asks apps to identify themselves. Browsers won't let pages set User-Agent, so only native does. */
@@ -23,7 +24,10 @@ const HEADERS: Record<string, string> =
 interface OffProduct {
   code?: unknown;
   product_name?: unknown;
+  generic_name?: unknown;
   brands?: unknown;
+  quantity?: unknown;
+  categories_tags?: unknown;
   nutriments?: Record<string, unknown>;
   serving_size?: unknown;
   serving_quantity?: unknown;
@@ -33,6 +37,32 @@ interface OffProduct {
 
 const round1 = (value: number) => Math.round(value * 10) / 10;
 
+const fold = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+/** "en:greek-yogurts" → "Greek yogurts" (the most specific category OFF lists). */
+function categoryName(tags: unknown): string | null {
+  if (!Array.isArray(tags)) return null;
+  const last = [...tags].reverse().find((tag): tag is string => typeof tag === 'string' && tag.startsWith('en:'));
+  if (!last) return null;
+  const words = last.slice(3).replace(/-/g, ' ').trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : null;
+}
+
+/**
+ * The name shoppers would use. Many entries are titled with just the brand
+ * ("Chobani"), so the generic name or category fills in what the thing is.
+ */
+export function displayName(product: OffProduct, brand: string | null): string | null {
+  const name = text(product.product_name);
+  const generic = text(product.generic_name);
+  const category = categoryName(product.categories_tags);
+  const bare = !name || (brand !== null && fold(name) === fold(brand)) || name.length < 3;
+  if (!bare) return name;
+  const what = generic ?? category;
+  if (!what) return name;
+  return name && brand && fold(name) === fold(brand) ? `${brand} ${what.charAt(0).toLowerCase() + what.slice(1)}` : what;
+}
+
 function numberFrom(value: unknown): number | null {
   const parsed = typeof value === 'string' ? Number(value) : value;
   return typeof parsed === 'number' && Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
@@ -40,7 +70,8 @@ function numberFrom(value: unknown): number | null {
 
 function text(value: unknown): string | null {
   if (Array.isArray(value)) return text(value.filter((part) => typeof part === 'string').join(', '));
-  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
+  const clean = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+  return clean !== '' ? clean : null;
 }
 
 /**
@@ -49,7 +80,8 @@ function text(value: unknown): string | null {
  */
 export function normalizeOffProduct(product: OffProduct): FoodDetail | null {
   const code = text(product.code);
-  const name = text(product.product_name);
+  const brand = text(product.brands);
+  const name = displayName(product, brand);
   const n = product.nutriments ?? {};
   const kj = numberFrom(n['energy-kj_100g']);
   const kcal = numberFrom(n['energy-kcal_100g']) ?? (kj !== null ? kj / 4.184 : null);
@@ -85,7 +117,8 @@ export function normalizeOffProduct(product: OffProduct): FoodDetail | null {
   servings.push({ id: `100${unit}`, description: `100 ${unit}`, metricAmount: 100, metricUnit: unit, isDefault: servings.length === 0, ...scaled(100) });
 
   const imageUrl = text(product.image_front_url);
-  return { id: `off:${code}`, source: 'openfoodfacts', externalId: code, name, brand: text(product.brands), imageUrl: imageUrl?.startsWith('https://') ? imageUrl : null, servings };
+  const quantity = text(product.quantity);
+  return { id: `off:${code}`, source: 'openfoodfacts', externalId: code, name, brand, detail: quantity && quantity.length <= 24 ? quantity : null, imageUrl: imageUrl?.startsWith('https://') ? imageUrl : null, servings };
 }
 
 export interface OffSearchPage {
@@ -109,7 +142,7 @@ export async function searchOpenFoodFacts(query: string, page = 1, signal?: Abor
       ? `${PROXY_SEARCH_URL}?${new URLSearchParams({ q: query, page: String(page) })}`
       : `${SEARCH_URL}?${new URLSearchParams({ q: query, page: String(page), page_size: String(OFF_PAGE_SIZE), fields: FIELDS })}`;
   const body = (await getJson(url, signal)) as { hits?: OffProduct[]; page_count?: number } | null;
-  const foods = (body?.hits ?? []).map(normalizeOffProduct).filter((food): food is FoodDetail => food !== null);
+  const foods = sortByCompleteness(dedupeFoods((body?.hits ?? []).map(normalizeOffProduct).filter((food): food is FoodDetail => food !== null)));
   return { foods, page, pageCount: typeof body?.page_count === 'number' ? body.page_count : page };
 }
 
