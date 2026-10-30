@@ -31,10 +31,14 @@ interface FoodHeroProps {
  * the food's name and amount set over it, like a magazine cover.
  */
 export function FoodHero({ title, subtitle, amount, amountCaption, imageUri, tintHints = [], badge, onBack }: FoodHeroProps) {
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const [tintStart, tintEnd] = heroTintFor(...tintHints, title);
-  useLightStatusBar();
+  // Light mode sets dark text over a whitened foot of the photo; dark mode keeps white text over a darkened one.
+  useLightStatusBar(isDark);
+  const ink = isDark ? '#FFFFFF' : colors.text;
+  const inkMuted = isDark ? 'rgba(255,255,255,0.8)' : colors.textSecondary;
+  const scrim = isDark ? ['rgba(20,12,40,0.55)', 'rgba(20,12,40,0.05)', 'rgba(20,12,40,0.6)'] : ['rgba(255,255,255,0.35)', 'rgba(255,255,255,0.0)', 'rgba(255,255,255,0.82)'];
 
   return (
     <View style={styles.hero}>
@@ -47,12 +51,12 @@ export function FoodHero({ title, subtitle, amount, amountCaption, imageUri, tin
           </Text>
         </LinearGradient>
       )}
-      <LinearGradient colors={['rgba(20,12,40,0.55)', 'rgba(20,12,40,0.05)', 'rgba(20,12,40,0.55)']} style={StyleSheet.absoluteFill} pointerEvents="none" />
+      <LinearGradient colors={scrim as [string, string, string]} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
 
       <View style={[styles.topBar, { paddingTop: insets.top + Spacing.sm }]}>
         {onBack ? (
-          <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} style={styles.backButton}>
-            <AppIcon name="chevronLeft" size={18} color="#FFFFFF" weight="semibold" />
+          <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.75)' }]}>
+            <AppIcon name="chevronLeft" size={18} color={ink} weight="semibold" />
           </Pressable>
         ) : (
           <View style={styles.backButton} />
@@ -68,22 +72,22 @@ export function FoodHero({ title, subtitle, amount, amountCaption, imageUri, tin
 
       <View style={styles.titles}>
         <View style={styles.titleBlock}>
-          <ThemedText variant="title1" style={styles.onPhoto} numberOfLines={3} accessibilityRole="header">
+          <ThemedText variant="title1" style={{ color: ink }} numberOfLines={3} accessibilityRole="header">
             {title}
           </ThemedText>
           {subtitle ? (
-            <ThemedText variant="subhead" style={styles.onPhotoMuted} numberOfLines={1}>
+            <ThemedText variant="subhead" style={{ color: inkMuted }} numberOfLines={1}>
               {subtitle}
             </ThemedText>
           ) : null}
         </View>
         {amount ? (
           <View style={styles.amountBlock}>
-            <ThemedText variant="title1" style={[styles.onPhoto, styles.tabular]}>
+            <ThemedText variant="title1" style={[styles.tabular, { color: ink }]}>
               {amount}
             </ThemedText>
             {amountCaption ? (
-              <ThemedText variant="footnote" style={styles.onPhotoMuted}>
+              <ThemedText variant="footnote" style={{ color: inkMuted }}>
                 {amountCaption}
               </ThemedText>
             ) : null}
@@ -98,15 +102,13 @@ export function FoodHero({ title, subtitle, amount, amountCaption, imageUri, tin
 const styles = StyleSheet.create({
   hero: { height: 340, justifyContent: 'space-between', overflow: 'hidden' },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg },
-  backButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
+  backButton: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   badge: { backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: Radii.full },
   badgeText: { color: '#17142B', letterSpacing: 0.5 },
   titles: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: Spacing.lg, paddingHorizontal: Spacing.lg, paddingBottom: Spacing['3xl'] },
   titleBlock: { flex: 1, gap: 2 },
   amountBlock: { alignItems: 'flex-end' },
   emoji: { position: 'absolute', right: 20, top: 92, fontSize: 132, lineHeight: 150, opacity: 0.95 },
-  onPhoto: { color: '#FFFFFF' },
-  onPhotoMuted: { color: 'rgba(255,255,255,0.8)' },
   tabular: { fontVariant: ['tabular-nums'] },
   lip: { position: 'absolute', left: 0, right: 0, bottom: -1, height: 24, borderTopLeftRadius: Radii['2xl'], borderTopRightRadius: Radii['2xl'] },
 });
