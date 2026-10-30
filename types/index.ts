@@ -8,8 +8,8 @@ export type WeightGoal = 'lose' | 'maintain' | 'gain';
 /** Only used for the calorie estimate; "unspecified" is always an option. */
 export type Sex = 'male' | 'female' | 'unspecified';
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
-/** usda: the bundled USDA database · openfoodfacts: packaged foods · custom: typed in by hand · ai_estimate: the photo scanner. */
-export type FoodSource = 'usda' | 'openfoodfacts' | 'custom' | 'ai_estimate';
+/** usda: the bundled USDA database · openfoodfacts: packaged foods · chain: a restaurant's menu · custom: typed in by hand · ai_estimate: the photo scanner. */
+export type FoodSource = 'usda' | 'openfoodfacts' | 'chain' | 'custom' | 'ai_estimate';
 /** How an amount was entered: a count of servings, or a metric weight/volume. */
 export type AmountUnit = 'serving' | 'g' | 'ml';
 export type MetricUnit = 'g' | 'ml';
@@ -45,8 +45,8 @@ export interface FoodServing extends NutritionValues {
 export interface FoodDetail {
   /** "usda:2705483" or "off:0894700010137". */
   id: string;
-  source: 'usda' | 'openfoodfacts';
-  /** The USDA FDC ID or the product barcode. */
+  source: 'usda' | 'openfoodfacts' | 'chain';
+  /** The USDA FDC ID, the product barcode, or the menu item's id. */
   externalId: string;
   name: string;
   brand: string | null;
@@ -98,6 +98,8 @@ export interface EstimatedFood extends NutritionValues {
   estimatedGrams: number;
   /** 0–1, the model's own confidence in the identification. */
   confidence: number;
+  /** The restaurant chain, when branding or a signature item made it recognizable. */
+  chain: string | null;
 }
 
 export interface MealAnalysis {

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { dedupeFoods } from '@/lib/food/dedupe';
 import { rememberFoods } from '@/lib/food/foodStore';
 import { searchOpenFoodFacts } from '@/lib/food/openFoodFacts';
+import { detectChain, searchChainFoods } from '@/lib/food/chainDatabase';
 import { searchUsdaFoods } from '@/lib/food/usdaDatabase';
 import type { FoodDetail } from '@/types';
 import { getErrorMessage } from '@/utils/errors';
@@ -32,6 +33,8 @@ function appendUnique(existing: FoodDetail[], next: FoodDetail[]): FoodDetail[] 
 export function useFoodSearch(query: string) {
   const active = query.length >= MIN_QUERY_LENGTH;
   const everyday = useMemo(() => (active ? searchUsdaFoods(query, 25) : []), [active, query]);
+  const restaurants = useMemo(() => (active ? searchChainFoods(query, 25) : []), [active, query]);
+  const chainNamed = useMemo(() => (active ? detectChain(query).chain : null), [active, query]);
 
   const [packaged, setPackaged] = useState<Packaged | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -84,6 +87,9 @@ export function useFoodSearch(query: string) {
   return {
     active,
     everyday,
+    restaurants,
+    /** The chain the query names, if any — its menu then leads the results. */
+    chainNamed,
     packaged: current?.foods ?? [],
     isAmbiguous: (food: FoodDetail) => ambiguous.has(`${food.name.toLowerCase()}|${(food.brand ?? '').toLowerCase()}`),
     packagedStatus: !active ? 'idle' : !current ? 'loading' : current.error ? 'error' : 'ready',

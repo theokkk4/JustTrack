@@ -7,6 +7,7 @@ A free calorie and macro tracker made in Philadelphia for college students — a
 - **Snap your meal.** Photograph your plate and an AI estimate names what's on it and sizes the portions. You review and fix it before anything is logged, and it's always labeled *Estimated*.
 - **Scan a barcode** for packaged foods (Open Food Facts).
 - **Search** 5,000+ everyday foods with real portions ("1 cup", "1 medium") from the USDA database that ships inside the app — instant and offline.
+- **Fast food, by name.** The menus of the 20 biggest U.S. chains (McDonald's, Starbucks, Chick-fil-A, Chipotle, Taco Bell…) — 6,000+ items with calories and macros — are bundled too. Type "chipotle chicken bowl" or "cfa spicy sandwich", and when the scanner recognizes a chain's cup or wrapper it snaps the item to the menu's real nutrition instead of estimating.
 - A daily calorie goal, by hand or estimated from a few body stats, optional macro targets, and a *Today* view with a balance score and calories by meal.
 
 Open source under the MIT license.
@@ -33,11 +34,11 @@ npm test                # jest
 | Screens (Expo Router) | `app/` — tabs: Home, Today, Scan, Profile; modals for Add Food, Edit Entry, Scan Review, Barcode, Goal |
 | The log and settings | `lib/log/`, `lib/settings/` — in-memory stores mirrored to on-device storage (`localStorage` on the web) |
 | Nutrition math | `lib/nutrition/` — portion scaling, calorie targets (Mifflin–St Jeor), the balance score |
-| Food data | `lib/food/` — the bundled USDA database with its ranking, Open Food Facts, category tints |
+| Food data | `lib/food/` — the bundled USDA database and chain menus with their ranking, Open Food Facts, category tints |
 | Photo scan | `hooks/useMealScan.ts` → `lib/scan/` → `api/analyze-meal.ts` |
 | Server functions (Vercel) | `api/analyze-meal.ts` (AI estimate, holds the key), `api/foods.ts` (packaged-food search proxy) |
 
-The USDA data is public domain (FoodData Central, FNDDS). Rebuild `assets/data/usda-foods.json` from a newer release with `node scripts/build-food-database.js path/to/surveyDownload.json`. Open Food Facts data is ODbL; the app credits both wherever food data is shown.
+The USDA data is public domain (FoodData Central, FNDDS). Rebuild `assets/data/usda-foods.json` from a newer release with `node scripts/build-food-database.js path/to/surveyDownload.json`. Open Food Facts data is ODbL. Chain menus come from the FatSecret Platform API: refresh `assets/data/chain-foods.json` with `FATSECRET_KEY=… FATSECRET_SECRET=… node scripts/build-chain-foods.js` (credentials stay in your shell; nothing in the app calls FatSecret). The app credits all three wherever food data is shown.
 
 ## Deploying (Vercel)
 

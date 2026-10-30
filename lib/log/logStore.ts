@@ -4,7 +4,7 @@ import { MEAL_TYPES } from '@/constants/nutrition';
 
 /** The on-device log. Saved as one JSON array; nothing leaves the device and nothing expires. */
 
-const SOURCES: readonly FoodSource[] = ['usda', 'openfoodfacts', 'custom', 'ai_estimate'];
+const SOURCES: readonly FoodSource[] = ['usda', 'openfoodfacts', 'chain', 'custom', 'ai_estimate'];
 const AMOUNT_UNITS: readonly AmountUnit[] = ['serving', 'g', 'ml'];
 
 function isFiniteNumber(value: unknown): value is number {

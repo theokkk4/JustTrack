@@ -27,14 +27,14 @@ describe('reviewStore', () => {
   beforeEach(resetReview);
 
   it('scales a row’s nutrition with its grams', () => {
-    const row = rowFromEstimate({ name: 'Rice', portionDescription: '1 cup', estimatedGrams: 160, confidence: 0.7, calories: 206, protein: 4.3, carbs: 44.5, fat: 0.4 });
+    const row = rowFromEstimate({ name: 'Rice', portionDescription: '1 cup', estimatedGrams: 160, confidence: 0.7, chain: null, calories: 206, protein: 4.3, carbs: 44.5, fat: 0.4 });
     expect(rowNutrition({ ...row, grams: 80 })).toEqual({ calories: 103, protein: 2.2, carbs: 22.3, fat: 0.2 });
   });
 
   it('walks a scan from analyzing to ready and edits rows', () => {
     startAnalysis('blob:photo');
     expect(reviewStore.getSnapshot()).toMatchObject({ status: 'analyzing', photoUri: 'blob:photo', rows: [] });
-    finishAnalysis({ foods: [{ name: 'Rice', portionDescription: '1 cup', estimatedGrams: 160, confidence: 0.7, calories: 206, protein: 4.3, carbs: 44.5, fat: 0.4 }], note: null });
+    finishAnalysis({ foods: [{ name: 'Rice', portionDescription: '1 cup', estimatedGrams: 160, confidence: 0.7, chain: null, calories: 206, protein: 4.3, carbs: 44.5, fat: 0.4 }], note: null });
     const [row] = reviewStore.getSnapshot().rows;
     setRowGrams(row.id, 80);
     expect(reviewStore.getSnapshot().rows[0].grams).toBe(80);

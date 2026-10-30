@@ -8,11 +8,12 @@ import { Spacing } from '@/constants/theme';
 const SOURCES = [
   { label: 'USDA FoodData Central', url: 'https://fdc.nal.usda.gov' },
   { label: 'Open Food Facts', url: 'https://world.openfoodfacts.org' },
+  { label: 'FatSecret', url: 'https://platform.fatsecret.com' },
 ] as const;
 
 /**
- * Credits the open data behind food search: USDA FoodData Central (public
- * domain) and Open Food Facts (ODbL, which requires attribution).
+ * Credits the data behind food search: USDA FoodData Central (public domain),
+ * Open Food Facts (ODbL), and FatSecret (restaurant menus; asks to be credited).
  */
 export function FoodDataAttribution({ style }: { style?: StyleProp<ViewStyle> }) {
   return (

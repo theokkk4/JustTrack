@@ -14,6 +14,7 @@ import { MEAL_TYPE_META } from '@/constants/nutrition';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { usePortion } from '@/hooks/usePortion';
+import { getChainFood } from '@/lib/food/chainDatabase';
 import { getUsdaFood } from '@/lib/food/usdaDatabase';
 import { amountLabel, createEntry, entryAsFood, rescaleEntry } from '@/lib/log/entries';
 import { addEntries, logStore, removeEntry, updateEntry } from '@/lib/log/logStore';
@@ -38,7 +39,7 @@ export default function EditEntryScreen() {
 
   // Built-in foods reopen with all their portions ("1 cup", grams…); anything else is rescaled from its own values.
   const databaseFood = useMemo(
-    () => (entry?.source === 'usda' && entry.externalFoodId && entry.externalServingId ? getUsdaFood(entry.externalFoodId) : null),
+    () => (entry?.externalFoodId && entry.externalServingId ? (entry.source === 'usda' ? getUsdaFood(entry.externalFoodId) : entry.source === 'chain' ? getChainFood(entry.externalFoodId) : null) : null),
     [entry]
   );
   const editAgainstDatabase = Boolean(databaseFood?.servings.some((serving) => serving.id === entry?.externalServingId));

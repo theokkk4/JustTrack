@@ -20,6 +20,7 @@ const EstimatedFoodSchema = z.object({
   portionDescription: z.string().describe('Plain-language portion, e.g. "about 1 cup" or "one slice".'),
   estimatedGrams: z.number().describe('Estimated weight of this portion in grams.'),
   confidence: z.number().describe('0 to 1: how sure you are this food is what you think it is.'),
+  chain: z.string().describe('The restaurant chain, exactly as listed in the instructions, when its branding, packaging, or a signature item is visible. Empty string otherwise.'),
   calories: z.number().describe('Calories in this portion.'),
   protein: z.number().describe('Grams of protein in this portion.'),
   carbs: z.number().describe('Grams of carbohydrate in this portion.'),
@@ -36,7 +37,9 @@ const { $schema: _ignored, ...RESPONSE_SCHEMA } = z.toJSONSchema(MealAnalysisSch
 
 const SYSTEM_PROMPT = `You identify food in a photo for a calorie-tracking app used by college students.
 
-List each distinct food you can actually see, largest portion first. For each, estimate the portion size as it appears (use plate, cutlery, and packaging for scale) and give nutrition for that portion using standard nutrition-database values for the most likely preparation. Combine components into the dish people would log ("Chicken burrito bowl") unless parts are clearly separate on the plate. Don't list foods that are hidden or merely plausible. If there's no food, return an empty list and say so in the note. Keep names short and specific.`;
+List each distinct food you can actually see, largest portion first. For each, estimate the portion size as it appears (use plate, cutlery, and packaging for scale) and give nutrition for that portion using standard nutrition-database values for the most likely preparation. Combine components into the dish people would log ("Chicken burrito bowl") unless parts are clearly separate on the plate. Don't list foods that are hidden or merely plausible. If there's no food, return an empty list and say so in the note. Keep names short and specific.
+
+Fast food: if a cup, wrapper, bag, box, or signature item shows which chain it's from, set "chain" to that chain and name the item the way its menu does (e.g. "Spicy Deluxe Sandwich", "Chicken Burrito Bowl", "Medium French Fries", "Grande Caramel Macchiato"), including size when visible. Chains to use exactly: McDonald's, Starbucks, Chick-fil-A, Taco Bell, Dunkin', Wendy's, Chipotle Mexican Grill, Burger King, Domino's, Subway, Panda Express, Panera Bread, Popeyes, Raising Cane's, Sonic Drive-In, Pizza Hut, Dairy Queen, Wingstop, KFC, Jersey Mike's. Don't guess a chain from the food alone.`;
 
 /** Best-effort per-IP limiter; each serverless instance keeps its own counts. */
 const recent = new Map<string, number[]>();

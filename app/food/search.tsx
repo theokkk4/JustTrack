@@ -19,7 +19,7 @@ import type { FoodDetail } from '@/types';
 import { defaultMealType } from '@/utils/mealTime';
 import { mealTypeParam, singleParam } from '@/utils/routeParams';
 
-type SectionKey = 'everyday' | 'packaged';
+type SectionKey = 'restaurants' | 'everyday' | 'packaged';
 
 export default function FoodSearchScreen() {
   const router = useRouter();
@@ -46,12 +46,16 @@ export default function FoodSearchScreen() {
 
   const sections: { key: SectionKey; title: string; data: FoodDetail[] }[] = search.active
     ? [
-        { key: 'everyday', title: 'Everyday foods', data: search.everyday },
-        { key: 'packaged', title: 'Packaged foods', data: search.packaged },
-      ]
+        ...(search.restaurants.length > 0 || search.chainNamed ? [{ key: 'restaurants' as const, title: search.chainNamed ?? 'Restaurants', data: search.restaurants }] : []),
+        { key: 'everyday' as const, title: 'Everyday foods', data: search.everyday },
+        { key: 'packaged' as const, title: 'Packaged foods', data: search.packaged },
+      ].sort((a, b) => (search.chainNamed ? 0 : (a.key === 'restaurants' ? 1 : 0) - (b.key === 'restaurants' ? 1 : 0)))
     : [];
 
   const sectionFooter = (key: SectionKey) => {
+    if (key === 'restaurants') {
+      return search.restaurants.length === 0 ? <Note text={`Nothing on the ${search.chainNamed} menu matches those words.`} /> : null;
+    }
     if (key === 'everyday') {
       return search.everyday.length === 0 ? <Note text="No everyday foods match — try a simpler word." /> : null;
     }

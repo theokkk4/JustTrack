@@ -87,9 +87,9 @@ export default function ReviewScreen() {
     const entries = rows.map((row) =>
       createEntry(
         {
-          ...entryFromEstimate({ name: row.name, portionDescription: row.portionDescription, estimatedGrams: row.grams, confidence: row.confidence, ...rowNutrition(row) }, mealType),
+          ...entryFromEstimate({ name: row.name, portionDescription: row.portionDescription, estimatedGrams: row.grams, confidence: row.confidence, chain: row.chain, ...rowNutrition(row) }, mealType),
           imageUri: state.thumbnailUri,
-          ...(row.matchedFood ? { source: row.matchedFood.source, externalFoodId: row.matchedFood.externalId, brand: row.matchedFood.brand } : {}),
+          ...(row.matchedFood ? { source: row.matchedFood.source, externalFoodId: row.matchedFood.externalId, brand: row.matchedFood.brand, isEstimate: row.matchedFood.source !== 'chain' } : {}),
         },
         new Date()
       )
@@ -158,7 +158,7 @@ export default function ReviewScreen() {
                               {row.name}
                             </ThemedText>
                             <ThemedText variant="footnote" color="secondary" numberOfLines={1}>
-                              {row.matchedFood ? `Matched to ${row.matchedFood.source === 'usda' ? 'USDA' : 'Open Food Facts'}` : row.portionDescription}
+                              {row.matchedFood ? (row.matchedFood.source === 'chain' ? `${row.matchedFood.brand} menu · ${row.portionDescription}` : `Matched to ${row.matchedFood.source === 'usda' ? 'USDA' : 'Open Food Facts'}`) : row.portionDescription}
                               {row.confidence < 0.5 && !row.matchedFood ? ' · not sure about this one' : ''}
                             </ThemedText>
                           </View>

@@ -1,5 +1,6 @@
 import { calculateNutrition } from '@/lib/nutrition/calculateNutrition';
 import { metricServing } from '@/lib/nutrition/portion';
+import { matchChainItem } from '@/lib/food/chainDatabase';
 import type { EstimatedFood, FoodDetail, MealAnalysis, NutritionValues } from '@/types';
 
 /**
@@ -17,7 +18,9 @@ export interface ReviewRow {
   /** Nutrition at `basis.grams`; everything else scales from it. */
   basis: { grams: number; nutrition: NutritionValues };
   /** Set once the user swaps in a database food. */
-  matchedFood: { name: string; brand: string | null; source: 'usda' | 'openfoodfacts'; externalId: string } | null;
+  matchedFood: { name: string; brand: string | null; source: FoodDetail['source']; externalId: string } | null;
+  /** The chain the scanner recognized, whether or not a menu item matched. */
+  chain: string | null;
 }
 
 export interface ReviewState {
@@ -61,6 +64,28 @@ export function rowFromEstimate(food: EstimatedFood): ReviewRow {
     confidence: food.confidence,
     basis: { grams, nutrition: { calories: food.calories, protein: food.protein, carbs: food.carbs, fat: food.fat } },
     matchedFood: null,
+    chain: food.chain,
+  };
+}
+
+/** A recognized chain item snaps to its menu nutrition, so the row isn't an estimate anymore. */
+function withMenuMatch(row: ReviewRow): ReviewRow {
+  if (!row.chain) return row;
+  const food = matchChainItem(row.chain, row.name, row.portionDescription);
+  return (food && matchedRow(row, food)) ?? row;
+}
+
+function matchedRow(row: ReviewRow, food: FoodDetail): ReviewRow | null {
+  const base = metricServing(food, 'g') ?? food.servings.find((serving) => serving.metricAmount) ?? food.servings.find((serving) => serving.isDefault) ?? null;
+  if (!base) return null;
+  // Menu items list nutrition per serving with no weight; the estimated grams stand in for one serving.
+  const grams = base.metricAmount ?? row.grams;
+  return {
+    ...row,
+    name: food.name,
+    portionDescription: base.metricAmount ? row.portionDescription : base.description,
+    basis: { grams, nutrition: { calories: base.calories, protein: base.protein, carbs: base.carbs, fat: base.fat } },
+    matchedFood: { name: food.name, brand: food.brand, source: food.source, externalId: food.externalId },
   };
 }
 
@@ -77,7 +102,7 @@ export function setReviewThumbnail(thumbnailUri: string | null): void {
 }
 
 export function finishAnalysis(analysis: MealAnalysis): void {
-  publish({ ...state, status: 'ready', note: analysis.note, rows: analysis.foods.map(rowFromEstimate) });
+  publish({ ...state, status: 'ready', note: analysis.note, rows: analysis.foods.map((food) => withMenuMatch(rowFromEstimate(food))) });
 }
 
 export function failAnalysis(error: string, errorCode: string | null): void {
@@ -94,21 +119,7 @@ export function removeRow(id: string): void {
 
 /** Swaps the model's guess for a database food, keeping the estimated grams. */
 export function matchRowToFood(id: string, food: FoodDetail): void {
-  const base = metricServing(food, 'g') ?? food.servings.find((serving) => serving.metricAmount) ?? null;
-  if (!base?.metricAmount) return;
-  publish({
-    ...state,
-    rows: state.rows.map((row) =>
-      row.id === id
-        ? {
-            ...row,
-            name: food.name,
-            basis: { grams: base.metricAmount as number, nutrition: { calories: base.calories, protein: base.protein, carbs: base.carbs, fat: base.fat } },
-            matchedFood: { name: food.name, brand: food.brand, source: food.source, externalId: food.externalId },
-          }
-        : row
-    ),
-  });
+  publish({ ...state, rows: state.rows.map((row) => (row.id === id ? (matchedRow(row, food) ?? row) : row)) });
 }
 
 export function resetReview(): void {

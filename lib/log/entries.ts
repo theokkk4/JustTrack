@@ -106,7 +106,7 @@ export function entryAsFood(entry: LogEntry): FoodDetail | null {
   };
   return {
     id: `entry:${entry.id}`,
-    source: entry.source === 'openfoodfacts' ? 'openfoodfacts' : 'usda',
+    source: entry.source === 'openfoodfacts' || entry.source === 'chain' ? entry.source : 'usda',
     externalId: entry.externalFoodId ?? entry.id,
     name: entry.foodName,
     brand: entry.brand,

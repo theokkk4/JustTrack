@@ -77,7 +77,7 @@ export default function AddFoodScreen() {
         amountCaption="portion"
         imageUri={food.imageUrl}
         tintHints={[food.category, food.brand]}
-        badge={food.source === 'usda' ? 'USDA' : 'PACKAGED'}
+        badge={food.source === 'usda' ? 'USDA' : food.source === 'chain' ? 'MENU' : 'PACKAGED'}
         onBack={() => (router.canGoBack() ? router.back() : closeFlow())}
       />
 

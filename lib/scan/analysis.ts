@@ -24,6 +24,7 @@ export function parseEstimatedFood(raw: unknown): EstimatedFood | null {
     portionDescription: text(item.portionDescription, 80) ?? `${Math.round(estimatedGrams)} g`,
     estimatedGrams,
     confidence: finite(item.confidence, 0, 1) ?? 0.5,
+    chain: text(item.chain, 40),
     calories,
     protein: finite(item.protein, 0, 1000) ?? 0,
     carbs: finite(item.carbs, 0, 1000) ?? 0,

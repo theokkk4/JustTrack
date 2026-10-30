@@ -1,5 +1,6 @@
 import type { FoodDetail } from '@/types';
 import { getOpenFoodFactsProduct } from './openFoodFacts';
+import { getChainFood } from './chainDatabase';
 import { getUsdaFood } from './usdaDatabase';
 
 /**
@@ -17,6 +18,7 @@ export function rememberFoods(foods: readonly FoodDetail[]): void {
 /** Synchronous lookup: built-in foods and remembered packaged foods. */
 export function peekFood(key: string): FoodDetail | null {
   if (key.startsWith('usda:')) return getUsdaFood(key.slice('usda:'.length));
+  if (key.startsWith('chain:')) return getChainFood(key.slice('chain:'.length));
   return remembered.get(key) ?? null;
 }
 

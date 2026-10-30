@@ -33,7 +33,7 @@ describe('entryFromFood', () => {
 
 describe('entryFromEstimate', () => {
   it('stores the scanner’s portion as grams and marks it estimated', () => {
-    const food: EstimatedFood = { name: 'Burrito bowl', portionDescription: 'one bowl', estimatedGrams: 412.4, confidence: 0.8, calories: 655.55, protein: 41.26, carbs: 70, fat: 22 };
+    const food: EstimatedFood = { name: 'Burrito bowl', portionDescription: 'one bowl', estimatedGrams: 412.4, confidence: 0.8, chain: null, calories: 655.55, protein: 41.26, carbs: 70, fat: 22 };
     expect(entryFromEstimate(food, 'dinner')).toMatchObject({ source: 'ai_estimate', isEstimate: true, grams: 412.4, amountUnit: 'g', servings: 1, calories: 655.6, protein: 41.3 });
   });
 });
