@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
@@ -18,6 +18,9 @@ import { useLog } from '@/hooks/useLog';
 import { useSettings } from '@/hooks/useSettings';
 import { formatRelativeDay, getGreeting, isSameDay } from '@/utils/date';
 
+/** The entrance plays once per launch, not every time Home comes back into view. */
+let homeShown = false;
+
 function initialFor(name: string | null): string {
   return name?.trim().charAt(0).toUpperCase() || 'JT';
 }
@@ -27,6 +30,10 @@ export default function HomeScreen() {
   const { colors } = useAppTheme();
   const { now, today } = useCurrentTime();
   const [picked, setPicked] = useState<Date | null>(null);
+  const [firstShow] = useState(() => !homeShown);
+  useEffect(() => {
+    homeShown = true;
+  }, []);
   // Follow the calendar: once a new day starts, the picked day falls back to today.
   const day = picked && picked <= today ? picked : today;
   const isToday = isSameDay(day, today);
@@ -52,7 +59,7 @@ export default function HomeScreen() {
           </Tap>
         </View>
         <WeekStrip today={today} selected={day} onSelect={setPicked} />
-        <Animated.View key={day.toDateString()} entering={FadeIn.duration(350)}>
+        <Animated.View key={day.toDateString()} entering={firstShow ? FadeIn.duration(350) : undefined}>
           <CaloriesLeft eaten={totals.calories} goal={settings.calorieGoal} />
           <View style={styles.rings}>
             <MacroRings totals={totals} goals={settings.macroGoals} />
@@ -76,7 +83,7 @@ export default function HomeScreen() {
 
         <View style={styles.cards}>
           {sections.map((section, index) => (
-            <Animated.View key={`${section.mealType}-${day.toDateString()}`} entering={FadeInDown.delay(80 + index * 70).duration(420)}>
+            <Animated.View key={`${section.mealType}-${day.toDateString()}`} entering={firstShow ? FadeInDown.delay(80 + index * 70).duration(420) : undefined}>
               <MealCard section={section} onAdd={() => router.push({ pathname: '/food/search', params: { mealType: section.mealType } })} />
             </Animated.View>
           ))}
