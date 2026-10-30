@@ -23,7 +23,7 @@ Before the first push, replace the two placeholders in `store.config.json` under
 
 | Field | Value |
 | --- | --- |
-| Name (30) | `JustTrack` |
+| Name (30) | `JustTrack: Calorie Counter` (plain "JustTrack" is taken by another developer on the App Store) |
 | Subtitle (30) | `Free, open source, no ads` |
 | Bundle ID | `com.theokkk4.justtrack` |
 | SKU | `justtrack-ios` |
