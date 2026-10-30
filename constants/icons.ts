@@ -11,21 +11,18 @@ interface IconSpec {
 
 /**
  * Every icon the app uses, keyed by semantic name. iOS renders the real SF
- * Symbol; other platforms fall back to Ionicons so the app doesn't break,
- * even though iOS is the only platform this project targets for release.
+ * Symbol; the web and Android fall back to Ionicons.
  */
 export const AppIcons = {
   home: { sf: 'house', ionicon: 'home-outline' },
   homeFilled: { sf: 'house.fill', ionicon: 'home' },
-  diary: { sf: 'book.closed', ionicon: 'book-outline' },
-  diaryFilled: { sf: 'book.closed.fill', ionicon: 'book' },
+  stats: { sf: 'chart.pie', ionicon: 'pie-chart-outline' },
+  statsFilled: { sf: 'chart.pie.fill', ionicon: 'pie-chart' },
   scan: { sf: 'viewfinder', ionicon: 'scan-outline' },
-  progress: { sf: 'chart.line.uptrend.xyaxis', ionicon: 'stats-chart-outline' },
-  progressFilled: { sf: 'chart.line.uptrend.xyaxis', ionicon: 'stats-chart' },
+  scanFilled: { sf: 'viewfinder', ionicon: 'scan' },
   profile: { sf: 'person', ionicon: 'person-outline' },
   profileFilled: { sf: 'person.fill', ionicon: 'person' },
 
-  flame: { sf: 'flame.fill', ionicon: 'flame' },
   plus: { sf: 'plus', ionicon: 'add' },
   minus: { sf: 'minus', ionicon: 'remove' },
   plusCircle: { sf: 'plus.circle.fill', ionicon: 'add-circle' },
@@ -44,8 +41,11 @@ export const AppIcons = {
   barcode: { sf: 'barcode.viewfinder', ionicon: 'barcode-outline' },
   photo: { sf: 'photo.on.rectangle', ionicon: 'images-outline' },
   camera: { sf: 'camera.fill', ionicon: 'camera' },
+  sparkles: { sf: 'sparkles', ionicon: 'sparkles-outline' },
+  flame: { sf: 'flame.fill', ionicon: 'flame' },
+  clock: { sf: 'clock', ionicon: 'time-outline' },
+  calendar: { sf: 'calendar', ionicon: 'calendar-outline' },
   bolt: { sf: 'bolt.fill', ionicon: 'flash' },
-  boltSlash: { sf: 'bolt.slash.fill', ionicon: 'flash-off' },
 
   breakfast: { sf: 'sunrise.fill', ionicon: 'partly-sunny-outline' },
   lunch: { sf: 'sun.max.fill', ionicon: 'sunny-outline' },
@@ -56,17 +56,14 @@ export const AppIcons = {
   target: { sf: 'target', ionicon: 'locate-outline' },
   ruler: { sf: 'ruler.fill', ionicon: 'resize-outline' },
   appearance: { sf: 'paintbrush.fill', ionicon: 'color-palette-outline' },
-  notifications: { sf: 'bell.fill', ionicon: 'notifications-outline' },
   privacy: { sf: 'lock.fill', ionicon: 'lock-closed-outline' },
-  export: { sf: 'square.and.arrow.up', ionicon: 'share-outline' },
-  deleteAccount: { sf: 'person.crop.circle.badge.xmark', ionicon: 'person-remove-outline' },
+  shield: { sf: 'checkmark.shield.fill', ionicon: 'shield-checkmark-outline' },
+  pin: { sf: 'mappin.and.ellipse', ionicon: 'location-outline' },
   openSource: { sf: 'chevron.left.forwardslash.chevron.right', ionicon: 'code-slash-outline' },
   info: { sf: 'info.circle.fill', ionicon: 'information-circle-outline' },
-  mail: { sf: 'envelope.fill', ionicon: 'mail-outline' },
-  signOut: { sf: 'rectangle.portrait.and.arrow.right', ionicon: 'log-out-outline' },
   wifiOff: { sf: 'wifi.slash', ionicon: 'cloud-offline-outline' },
   scale: { sf: 'scalemass.fill', ionicon: 'speedometer-outline' },
-  seal: { sf: 'checkmark.seal.fill', ionicon: 'shield-checkmark' },
+  heart: { sf: 'heart.fill', ionicon: 'heart' },
 } as const satisfies Record<string, IconSpec>;
 
 export type AppIconName = keyof typeof AppIcons;

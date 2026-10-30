@@ -10,6 +10,13 @@ export function addDays(date: Date, days: number): Date {
   return result;
 }
 
+/** Local midnight of the Monday starting the week that contains `date`. */
+export function startOfWeek(date: Date): Date {
+  const start = startOfDay(date);
+  const offset = (start.getDay() + 6) % 7; // Sunday → 6, Monday → 0
+  return addDays(start, -offset);
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }

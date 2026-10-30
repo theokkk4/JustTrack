@@ -1,96 +1,91 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CalorieRing } from '@/components/nutrition/CalorieRing';
-import { MacroBar } from '@/components/nutrition/MacroBar';
-import { Banner } from '@/components/ui/Banner';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { ListRow, ListSection } from '@/components/ui/ListRow';
-import { Screen } from '@/components/ui/Screen';
+import { CaloriesLeft } from '@/components/home/CaloriesLeft';
+import { MacroShareRow } from '@/components/home/MacroShareRow';
+import { MealCard } from '@/components/home/MealCard';
+import { WeekStrip } from '@/components/home/WeekStrip';
+import { GradientHeader } from '@/components/layout/GradientHeader';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { ThemedText } from '@/components/ui/ThemedText';
-import { MEAL_TYPE_META } from '@/constants/nutrition';
-import { Spacing } from '@/constants/theme';
+import { PRIVACY_LINE } from '@/constants/brand';
+import { Radii, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
-import { useDayLog } from '@/hooks/useDayLog';
-import { useNutritionGoals } from '@/hooks/useNutritionGoals';
-import { formatLongDate, getGreeting } from '@/utils/date';
-import { formatCalories } from '@/utils/format';
+import { useLog } from '@/hooks/useLog';
+import { useSettings } from '@/hooks/useSettings';
+import { describeTimeLeft, msUntilNextExpiry } from '@/lib/log/window';
+
+function initialFor(name: string | null): string {
+  return name?.trim().charAt(0).toUpperCase() || 'JT';
+}
 
 export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { now, today } = useCurrentTime();
-  const day = useDayLog(today);
-  const { sections, totals } = day;
-  const goals = useNutritionGoals();
+  const { today } = useCurrentTime();
+  const { entries, sections, totals, now } = useLog();
+  const settings = useSettings();
+  const nextExpiry = msUntilNextExpiry(entries, now);
 
   return (
-    <Screen onRefresh={() => void day.refresh()} refreshing={day.refreshing && day.status !== 'loading'}>
-      <View style={styles.header}>
-        <ThemedText variant="footnote" color="secondary" style={styles.eyebrow}>
-          {formatLongDate(today).toUpperCase()}
-        </ThemedText>
-        <ThemedText variant="largeTitle" accessibilityRole="header">
-          {getGreeting(now)}
+    <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="never">
+      <GradientHeader>
+        <View style={styles.topRow}>
+          <View style={[styles.avatar, { backgroundColor: 'rgba(255,255,255,0.22)' }]} accessible accessibilityLabel={settings.displayName ?? 'Profile'}>
+            <ThemedText variant="subheadEmphasized" style={{ color: colors.onGradient }}>
+              {initialFor(settings.displayName)}
+            </ThemedText>
+          </View>
+          <ThemedText variant="headline" style={{ color: colors.onGradient }} accessibilityRole="header">
+            Home
+          </ThemedText>
+          <View style={styles.avatar}>
+            <AppIcon name="calendar" size={18} color={colors.onGradient} />
+          </View>
+        </View>
+        <WeekStrip today={today} />
+        <CaloriesLeft eaten={totals.calories} goal={settings.calorieGoal} />
+        <MacroShareRow totals={totals} onGradient />
+      </GradientHeader>
+
+      <View style={styles.body}>
+        <View style={styles.sectionHeader}>
+          <ThemedText variant="title3" accessibilityRole="header">
+            Daily meals
+          </ThemedText>
+          {nextExpiry !== null ? (
+            <View style={[styles.chip, { backgroundColor: colors.backgroundSecondary }]} accessible accessibilityLabel={`Oldest entry clears ${describeTimeLeft(nextExpiry)}`}>
+              <AppIcon name="clock" size={13} color={colors.textSecondary} />
+              <ThemedText variant="caption1" color="secondary">
+                clears {describeTimeLeft(nextExpiry)}
+              </ThemedText>
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.cards}>
+          {sections.map((section) => (
+            <MealCard key={section.mealType} section={section} onAdd={() => router.push({ pathname: '/food/search', params: { mealType: section.mealType } })} />
+          ))}
+        </View>
+
+        <ThemedText variant="caption1" color="tertiary" style={styles.footnote}>
+          {PRIVACY_LINE}
         </ThemedText>
       </View>
-
-      <Card elevated="md" style={styles.summary}>
-        <CalorieRing consumed={totals.calories} goal={goals.calories} />
-        <View style={styles.macros}>
-          <MacroBar
-            label="Protein"
-            consumed={totals.protein}
-            goal={goals.protein}
-            color={colors.protein}
-            trackColor={colors.proteinMuted}
-          />
-          <MacroBar label="Carbs" consumed={totals.carbs} goal={goals.carbs} color={colors.carbs} trackColor={colors.carbsMuted} />
-          <MacroBar label="Fat" consumed={totals.fat} goal={goals.fat} color={colors.fat} trackColor={colors.fatMuted} />
-        </View>
-      </Card>
-
-      <ThemedText variant="title3" accessibilityRole="header" style={styles.sectionTitle}>
-        Today&apos;s Meals
-      </ThemedText>
-      <ListSection style={styles.meals}>
-        {sections.map((section, index) => (
-          <ListRow
-            key={section.mealType}
-            icon={MEAL_TYPE_META[section.mealType].icon}
-            iconBackground={colors.backgroundSecondary}
-            iconColor={colors.text}
-            title={MEAL_TYPE_META[section.mealType].label}
-            value={formatCalories(section.totals.calories)}
-            onPress={() => router.navigate('/diary')}
-            isLast={index === sections.length - 1}
-          />
-        ))}
-      </ListSection>
-
-      {day.error ? (
-        <View style={styles.notice}>
-          <Banner tone="error" message={day.error} actionLabel="Retry" onAction={() => void day.refresh()} />
-        </View>
-      ) : null}
-
-      <View style={styles.addFood}>
-        <Button label="Add Food" icon="plus" onPress={() => router.push('/food/search')} />
-      </View>
-    </Screen>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { paddingTop: Spacing.lg, paddingBottom: Spacing.xl, gap: Spacing.xxs },
-  eyebrow: { letterSpacing: 0.6 },
-  summary: { paddingVertical: Spacing['2xl'], gap: Spacing['2xl'] },
-  macros: { gap: Spacing.lg },
-  sectionTitle: { marginTop: Spacing['3xl'], marginBottom: Spacing.md },
-  meals: { marginTop: 0 },
-  addFood: { marginTop: Spacing.xl },
-  notice: { marginTop: Spacing.lg },
+  content: { paddingBottom: Spacing['5xl'] },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  body: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.xs, borderRadius: Radii.full },
+  cards: { gap: Spacing.md },
+  footnote: { textAlign: 'center', marginTop: Spacing['2xl'], paddingHorizontal: Spacing.lg },
 });

@@ -13,8 +13,7 @@
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
-      },
-      "usesAppleSignIn": true
+      }
     },
     "android": {
       "package": "com.theokkk4.justtrack",
@@ -40,11 +39,18 @@
           "imageWidth": 140
         }
       ],
-      "expo-apple-authentication"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "JustTrack uses your photo library when you pick a meal photo to estimate its nutrition.",
+          "cameraPermission": "JustTrack uses the camera to photograph meals and scan barcodes."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "description": "Free calorie tracking for Philly college students. No account, no ads, and nothing kept past 24 hours."
   }
 }

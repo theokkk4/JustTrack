@@ -1,4 +1,4 @@
-import { addDays, dayRange, formatRelativeDay, getGreeting, isSameDay, parseDateKey, startOfDay, toDateKey } from '../date';
+import { addDays, dayRange, formatRelativeDay, getGreeting, isSameDay, parseDateKey, startOfDay, startOfWeek, toDateKey } from '../date';
 
 describe('toDateKey', () => {
   it('uses the local calendar date, not UTC', () => {
@@ -79,5 +79,13 @@ describe('dayRange', () => {
     expect([start.getHours(), start.getMinutes()]).toEqual([0, 0]);
     expect(toDateKey(end)).toBe('2026-09-24');
     expect([end.getHours(), end.getMinutes()]).toEqual([0, 0]);
+  });
+});
+
+describe('startOfWeek', () => {
+  it('finds the Monday, even from a Sunday', () => {
+    expect(toDateKey(startOfWeek(new Date(2026, 9, 29)))).toBe('2026-10-26'); // Thursday → Monday
+    expect(toDateKey(startOfWeek(new Date(2026, 10, 1)))).toBe('2026-10-26'); // Sunday → previous Monday
+    expect(toDateKey(startOfWeek(new Date(2026, 9, 26)))).toBe('2026-10-26'); // Monday → itself
   });
 });

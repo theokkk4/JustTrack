@@ -36,7 +36,7 @@ export const HUNDRED_GRAMS_ID = '100g';
 
 /** Turns a database row into a food with servings: its portions (first is the default), then 100 g. */
 export function usdaRowToFood(row: UsdaRow): FoodDetail {
-  const [id, name, , kcal, protein, carbs, fat, portions] = row;
+  const [id, name, category, kcal, protein, carbs, fat, portions] = row;
   const per = (grams: number) => ({
     calories: round1((kcal * grams) / 100),
     protein: round1((protein * grams) / 100),
@@ -54,7 +54,7 @@ export function usdaRowToFood(row: UsdaRow): FoodDetail {
   }
   servings.push({ id: HUNDRED_GRAMS_ID, description: '100 g', metricAmount: 100, metricUnit: 'g', isDefault: servings.length === 0, ...per(100) });
 
-  return { id: `usda:${id}`, source: 'usda', externalId: String(id), name, brand: null, servings };
+  return { id: `usda:${id}`, source: 'usda', externalId: String(id), name, brand: null, category: category || null, servings };
 }
 
 export function searchUsdaFoods(query: string, limit = 25): FoodDetail[] {

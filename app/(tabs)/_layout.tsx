@@ -2,7 +2,7 @@ import { TabList, TabSlot, TabTrigger, Tabs } from 'expo-router/ui';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 
-import { ScanTabButton, TabBarButton, TabBarContainer } from '@/components/navigation/TabBar';
+import { AddButton, TabBarButton, TabBarContainer } from '@/components/navigation/TabBar';
 
 export default function TabsLayout() {
   return (
@@ -13,14 +13,12 @@ export default function TabsLayout() {
           <TabTrigger name="index" href="/" asChild>
             <TabBarButton icon="home" activeIcon="homeFilled" label="Home" />
           </TabTrigger>
-          <TabTrigger name="diary" href="/diary" asChild>
-            <TabBarButton icon="diary" activeIcon="diaryFilled" label="Diary" />
+          <TabTrigger name="stats" href="/stats" asChild>
+            <TabBarButton icon="stats" activeIcon="statsFilled" label="Today" />
           </TabTrigger>
+          <AddButton />
           <TabTrigger name="scan" href="/scan" asChild>
-            <ScanTabButton />
-          </TabTrigger>
-          <TabTrigger name="progress" href="/progress" asChild>
-            <TabBarButton icon="progress" activeIcon="progressFilled" label="Progress" />
+            <TabBarButton icon="scan" activeIcon="scanFilled" label="Scan" />
           </TabTrigger>
           <TabTrigger name="profile" href="/profile" asChild>
             <TabBarButton icon="profile" activeIcon="profileFilled" label="Profile" />

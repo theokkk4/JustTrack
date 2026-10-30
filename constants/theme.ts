@@ -1,8 +1,9 @@
 import type { TextStyle, ViewStyle } from 'react-native';
 
 /**
- * JustTrack design tokens. iOS-first: neutrals track the system
- * light/dark grouped-background convention so cards and lists feel native.
+ * JustTrack design tokens. A violet-to-white gradient crowns each screen;
+ * everything below it sits on clean white (or near-black) with soft lavender
+ * tints, so the food photos and the big calorie number carry the color.
  */
 
 export type ColorScheme = 'light' | 'dark';
@@ -10,94 +11,101 @@ export type ColorScheme = 'light' | 'dark';
 export interface ThemeColors {
   background: string;
   backgroundSecondary: string;
+  /** The page behind the phone-width column on wide screens. */
+  backdrop: string;
   surface: string;
-  surfaceElevated: string;
+  /** Lavender-tinted cards (meal cards, macro columns). */
+  surfaceTint: string;
+  surfaceTintStrong: string;
   border: string;
-  borderStrong: string;
   text: string;
   textSecondary: string;
   textTertiary: string;
   textInverse: string;
+  /** Text and icons that sit on the gradient header. */
+  onGradient: string;
+  onGradientMuted: string;
   accent: string;
   accentMuted: string;
   protein: string;
-  proteinMuted: string;
   carbs: string;
-  carbsMuted: string;
   fat: string;
-  fatMuted: string;
   success: string;
   warning: string;
   danger: string;
-  dangerMuted: string;
-  overlay: string;
+  /** Header gradient, top to bottom. */
+  gradientStart: string;
+  gradientMiddle: string;
+  gradientEnd: string;
   tabBarBackground: string;
   tabIconDefault: string;
   tabIconSelected: string;
-  scanButtonBackground: string;
-  scanButtonIcon: string;
+  fab: string;
+  fabIcon: string;
 }
 
 export const Colors: Record<ColorScheme, ThemeColors> = {
   light: {
     background: '#FFFFFF',
-    backgroundSecondary: '#F2F2F7',
+    backgroundSecondary: '#F5F3FC',
+    backdrop: '#ECE9F8',
     surface: '#FFFFFF',
-    surfaceElevated: '#FFFFFF',
-    border: '#E5E5EA',
-    borderStrong: '#D1D1D6',
-    text: '#0B0D0F',
-    textSecondary: '#6B7280',
-    textTertiary: '#9CA3AF',
+    surfaceTint: '#F3F0FD',
+    surfaceTintStrong: '#E9E4FB',
+    border: '#E9E6F4',
+    text: '#17142B',
+    textSecondary: '#6F6B87',
+    textTertiary: '#A6A2BA',
     textInverse: '#FFFFFF',
-    accent: '#12B76A',
-    accentMuted: '#E3F9EE',
-    protein: '#FF3B5C',
-    proteinMuted: '#FFE8EC',
-    carbs: '#FF9500',
-    carbsMuted: '#FFF2E0',
-    fat: '#5E5CE6',
-    fatMuted: '#EBEAFD',
-    success: '#12B76A',
-    warning: '#FF9500',
-    danger: '#FF3B30',
-    dangerMuted: '#FFEBEA',
-    overlay: 'rgba(11,13,15,0.4)',
-    tabBarBackground: 'rgba(255,255,255,0.92)',
-    tabIconDefault: '#9CA3AF',
-    tabIconSelected: '#0B0D0F',
-    scanButtonBackground: '#0B0D0F',
-    scanButtonIcon: '#FFFFFF',
+    onGradient: '#FFFFFF',
+    onGradientMuted: 'rgba(255,255,255,0.72)',
+    accent: '#6B4EF2',
+    accentMuted: '#EDE9FD',
+    protein: '#F0547A',
+    carbs: '#F6A13B',
+    fat: '#6E8CF7',
+    success: '#22B573',
+    warning: '#F59E0B',
+    danger: '#E5484D',
+    gradientStart: '#5A3BF4',
+    gradientMiddle: '#A98EFF',
+    gradientEnd: '#FFFFFF',
+    tabBarBackground: '#FFFFFF',
+    tabIconDefault: '#B3AFC7',
+    tabIconSelected: '#17142B',
+    fab: '#17142B',
+    fabIcon: '#FFFFFF',
   },
   dark: {
-    background: '#000000',
-    backgroundSecondary: '#0A0A0C',
-    surface: '#1C1C1E',
-    surfaceElevated: '#242426',
-    border: '#2C2C2E',
-    borderStrong: '#38383A',
-    text: '#F5F5F7',
-    textSecondary: '#98989F',
-    textTertiary: '#68686C',
-    textInverse: '#0B0D0F',
-    accent: '#30D890',
-    accentMuted: '#0F2E22',
-    protein: '#FF6961',
-    proteinMuted: '#3A1B1C',
-    carbs: '#FFB340',
-    carbsMuted: '#3A2A0F',
-    fat: '#7D7AFF',
-    fatMuted: '#231F45',
-    success: '#30D890',
+    background: '#0F0D1A',
+    backgroundSecondary: '#181527',
+    backdrop: '#07060D',
+    surface: '#1A1729',
+    surfaceTint: '#1F1B33',
+    surfaceTintStrong: '#2A2447',
+    border: '#2B2742',
+    text: '#F4F2FF',
+    textSecondary: '#A9A5C4',
+    textTertiary: '#6F6B88',
+    textInverse: '#17142B',
+    onGradient: '#FFFFFF',
+    onGradientMuted: 'rgba(255,255,255,0.7)',
+    accent: '#9D86FF',
+    accentMuted: '#2A2347',
+    protein: '#FF6F8E',
+    carbs: '#FFB457',
+    fat: '#8EA6FF',
+    success: '#3DD68C',
     warning: '#FFB340',
-    danger: '#FF6961',
-    dangerMuted: '#3A1B1C',
-    overlay: 'rgba(0,0,0,0.6)',
-    tabBarBackground: 'rgba(20,20,22,0.85)',
-    tabIconDefault: '#68686C',
-    tabIconSelected: '#F5F5F7',
-    scanButtonBackground: '#F5F5F7',
-    scanButtonIcon: '#0B0D0F',
+    danger: '#FF6B6B',
+    gradientStart: '#4B2EDB',
+    gradientMiddle: '#2A1F6E',
+    gradientEnd: '#0F0D1A',
+    tabBarBackground: '#13111F',
+    tabIconDefault: '#5E5A78',
+    tabIconSelected: '#F4F2FF',
+    fab: '#F4F2FF',
+    fabIcon: '#17142B',
   },
 };
 
@@ -115,20 +123,25 @@ export const Spacing = {
 } as const;
 
 export const Radii = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  '2xl': 28,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 24,
+  '2xl': 32,
   full: 999,
 } as const;
+
+/** The app renders as a phone-width column on wide screens. */
+export const CONTENT_MAX_WIDTH = 480;
 
 type TypographyToken = Pick<TextStyle, 'fontSize' | 'lineHeight' | 'fontWeight' | 'letterSpacing'>;
 
 export const Typography = {
-  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: '700' },
-  title1: { fontSize: 28, lineHeight: 34, fontWeight: '700' },
-  title2: { fontSize: 22, lineHeight: 28, fontWeight: '700' },
+  /** The giant "kcal left" number. */
+  display: { fontSize: 92, lineHeight: 96, fontWeight: '300', letterSpacing: -4 },
+  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: '700', letterSpacing: -0.5 },
+  title1: { fontSize: 28, lineHeight: 34, fontWeight: '700', letterSpacing: -0.4 },
+  title2: { fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: -0.3 },
   title3: { fontSize: 20, lineHeight: 25, fontWeight: '600' },
   headline: { fontSize: 17, lineHeight: 22, fontWeight: '600' },
   body: { fontSize: 17, lineHeight: 22, fontWeight: '400' },
@@ -147,19 +160,13 @@ type ShadowToken = Pick<ViewStyle, 'shadowColor' | 'shadowOffset' | 'shadowOpaci
 
 export const Shadows: Record<ColorScheme, Record<'sm' | 'md' | 'lg', ShadowToken>> = {
   light: {
-    sm: { shadowColor: '#0B0D0F', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1 },
-    md: { shadowColor: '#0B0D0F', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 },
-    lg: { shadowColor: '#0B0D0F', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.12, shadowRadius: 28, elevation: 8 },
+    sm: { shadowColor: '#2A1F6E', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 },
+    md: { shadowColor: '#2A1F6E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 4 },
+    lg: { shadowColor: '#2A1F6E', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.16, shadowRadius: 32, elevation: 10 },
   },
   dark: {
-    sm: { shadowColor: '#000000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.4, shadowRadius: 3, elevation: 1 },
-    md: { shadowColor: '#000000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 12, elevation: 3 },
-    lg: { shadowColor: '#000000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.6, shadowRadius: 28, elevation: 8 },
+    sm: { shadowColor: '#000000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 1 },
+    md: { shadowColor: '#000000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 4 },
+    lg: { shadowColor: '#000000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.6, shadowRadius: 32, elevation: 10 },
   },
 };
-
-export const MacroColorKey = {
-  protein: 'protein',
-  carbs: 'carbs',
-  fat: 'fat',
-} as const;

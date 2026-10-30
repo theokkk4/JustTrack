@@ -14,28 +14,35 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useFoodSearch } from '@/hooks/useFoodSearch';
+import { matchRowToFood } from '@/lib/scan/reviewStore';
 import type { FoodDetail } from '@/types';
-import { formatRelativeDay, parseDateKey, toDateKey } from '@/utils/date';
 import { defaultMealType } from '@/utils/mealTime';
-import { dateKeyParam, mealTypeParam } from '@/utils/routeParams';
+import { mealTypeParam, singleParam } from '@/utils/routeParams';
 
 type SectionKey = 'everyday' | 'packaged';
 
 export default function FoodSearchScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const params = useLocalSearchParams<{ mealType?: string; date?: string }>();
-  const { now, today } = useCurrentTime();
+  const params = useLocalSearchParams<{ mealType?: string; pick?: string; q?: string }>();
+  const { now } = useCurrentTime();
   const mealType = mealTypeParam(params.mealType) ?? defaultMealType(now);
-  const dateKey = dateKeyParam(params.date) ?? toDateKey(today);
+  // In "pick" mode the search is choosing a database match for a scanned food.
+  const pickRowId = singleParam(params.pick) ?? null;
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(() => singleParam(params.q) ?? '');
   // Built-in results are instant; the short debounce just spares Open Food Facts a request per keystroke.
   const debouncedQuery = useDebouncedValue(query.trim(), 300);
   const search = useFoodSearch(debouncedQuery);
 
-  const open = (food: FoodDetail) => router.push({ pathname: '/food/[id]', params: { id: food.id, mealType, date: dateKey } });
-  const destination = `${MEAL_TYPE_META[mealType].label} · ${formatRelativeDay(parseDateKey(dateKey) ?? today, today)}`;
+  const choose = (food: FoodDetail) => {
+    if (pickRowId) {
+      matchRowToFood(pickRowId, food);
+      router.back();
+      return;
+    }
+    router.push({ pathname: '/food/[id]', params: { id: food.id, mealType } });
+  };
 
   const sections: { key: SectionKey; title: string; data: FoodDetail[] }[] = search.active
     ? [
@@ -59,19 +66,24 @@ export default function FoodSearchScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerLeft: () => <HeaderButton label="Cancel" onPress={() => router.back()} /> }} />
+      <Stack.Screen
+        options={{
+          title: pickRowId ? 'Choose a match' : 'Add Food',
+          headerLeft: () => <HeaderButton label={pickRowId ? 'Back' : 'Cancel'} onPress={() => router.back()} />,
+        }}
+      />
 
       <View style={styles.searchBar}>
-        <SearchField value={query} onChangeText={setQuery} placeholder="Search foods or brands" autoFocus />
+        <SearchField value={query} onChangeText={setQuery} placeholder="Search foods or brands" autoFocus={!pickRowId} />
         <ThemedText variant="footnote" color="secondary" style={styles.destination}>
-          Adding to {destination}
+          {pickRowId ? 'Pick the closest match; the scanned amount is kept.' : `Adding to ${MEAL_TYPE_META[mealType].label}`}
         </ThemedText>
       </View>
 
       <SectionList
         sections={sections}
         keyExtractor={(food) => food.id}
-        renderItem={({ item }) => <FoodSearchRow food={item} onPress={() => open(item)} />}
+        renderItem={({ item }) => <FoodSearchRow food={item} onPress={() => choose(item)} />}
         renderSectionHeader={({ section }) => (
           <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
             <ThemedText variant="footnote" color="secondary" style={styles.sectionTitle}>
@@ -85,9 +97,7 @@ export default function FoodSearchScreen() {
         keyboardDismissMode="on-drag"
         onEndReached={() => void search.loadMore()}
         onEndReachedThreshold={0.6}
-        ListEmptyComponent={
-          <EmptyState icon="search" title="Search for a food" message="Try “chicken breast”, “banana”, or a brand like “Chobani”." />
-        }
+        ListEmptyComponent={<EmptyState icon="search" title="Search for a food" message="Try “chicken breast”, “banana”, or a brand like “Chobani”." />}
         ListFooterComponent={<FoodDataAttribution style={styles.attribution} />}
         contentContainerStyle={styles.list}
       />

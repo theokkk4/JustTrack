@@ -1,22 +1,22 @@
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import type { TabTriggerSlotProps } from 'expo-router/ui';
 import React from 'react';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon, type AppIconName } from '@/components/ui/AppIcon';
-import { ThemedText } from '@/components/ui/ThemedText';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 
 /**
- * Pieces of the custom tab bar. They're composed inline in
- * app/(tabs)/_layout.tsx because expo-router/ui discovers routes by reading
- * the TabTrigger elements directly inside TabList.
+ * The tab bar: four quiet icons and, in the middle, the one button that
+ * matters — a big round + that starts logging. Composed inline in
+ * app/(tabs)/_layout.tsx because expo-router/ui reads the TabTriggers there.
  */
 
 export function TabBarContainer({ style, children, ref, ...rest }: ViewProps & { ref?: React.Ref<View> }) {
-  const { colors } = useAppTheme();
+  const { colors, shadows } = useAppTheme();
   const insets = useSafeAreaInsets();
 
   return (
@@ -24,15 +24,7 @@ export function TabBarContainer({ style, children, ref, ...rest }: ViewProps & {
       {...rest}
       ref={ref}
       accessibilityRole="tablist"
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.tabBarBackground,
-          borderTopColor: colors.border,
-          paddingBottom: Math.max(insets.bottom, Spacing.sm),
-        },
-        style,
-      ]}
+      style={[styles.container, shadows.md, { backgroundColor: colors.tabBarBackground, paddingBottom: Math.max(insets.bottom, Spacing.md) }, style]}
     >
       {children}
     </View>
@@ -64,71 +56,36 @@ export function TabBarButton({ icon, activeIcon, label, isFocused, onPress, styl
       style={(state) => [typeof style === 'function' ? style(state) : style, styles.tab]}
     >
       <AppIcon name={isFocused && activeIcon ? activeIcon : icon} size={24} color={tint} />
-      <ThemedText variant="caption2" style={{ color: tint }} numberOfLines={1}>
-        {label}
-      </ThemedText>
     </Pressable>
   );
 }
 
-export function ScanTabButton({ isFocused, onPress, ref, ...rest }: TabTriggerSlotProps) {
+/** The + in the middle of the bar: opens Add Food for whichever meal fits the time of day. */
+export function AddButton() {
+  const router = useRouter();
   const { colors, shadows } = useAppTheme();
 
   return (
     <View style={styles.tab}>
       <Pressable
-        {...rest}
-        ref={ref}
-        accessibilityRole="tab"
-        accessibilityLabel="Scan food"
-        accessibilityState={{ selected: Boolean(isFocused) }}
-        onPress={(event) => {
+        onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          onPress?.(event);
+          router.push('/food/search');
         }}
-        style={({ pressed }) => [
-          styles.scanButton,
-          shadows.md,
-          { backgroundColor: colors.scanButtonBackground, transform: [{ scale: pressed ? 0.94 : 1 }] },
-        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Add food"
+        style={({ pressed }) => [styles.fab, shadows.lg, { backgroundColor: colors.fab, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
       >
-        <AppIcon name="scan" size={26} color={colors.scanButtonIcon} weight="semibold" />
+        <AppIcon name="plus" size={28} color={colors.fabIcon} weight="semibold" />
       </Pressable>
-      <ThemedText
-        variant="caption2"
-        style={{ color: isFocused ? colors.tabIconSelected : colors.tabIconDefault }}
-        numberOfLines={1}
-      >
-        Scan
-      </ThemedText>
     </View>
   );
 }
 
-const SCAN_BUTTON_SIZE = 56;
+const FAB_SIZE = 64;
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 3,
-    minHeight: 44,
-  },
-  scanButton: {
-    width: SCAN_BUTTON_SIZE,
-    height: SCAN_BUTTON_SIZE,
-    borderRadius: SCAN_BUTTON_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -Spacing.xl,
-  },
+  container: { flexDirection: 'row', alignItems: 'center', paddingTop: Spacing.sm, paddingHorizontal: Spacing.sm },
+  tab: { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 48 },
+  fab: { width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2, alignItems: 'center', justifyContent: 'center', marginTop: -Spacing['2xl'] },
 });

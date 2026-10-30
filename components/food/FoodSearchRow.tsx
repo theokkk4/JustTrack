@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -28,6 +29,9 @@ export function FoodSearchRow({ food, onPress }: FoodSearchRowProps) {
       accessibilityHint="Choose an amount and add it to your diary"
       style={({ pressed }) => [styles.row, { borderBottomColor: colors.border }, pressed && { backgroundColor: colors.backgroundSecondary }]}
     >
+      {food.imageUrl ? (
+        <Image source={{ uri: food.imageUrl }} style={styles.thumb} contentFit="cover" accessibilityIgnoresInvertColors />
+      ) : null}
       <View style={styles.text}>
         <ThemedText variant="body" numberOfLines={2}>
           {food.name}
@@ -54,6 +58,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     minHeight: 56,
   },
+  thumb: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#EEE' },
   text: { flex: 1, gap: 2 },
   tabular: { fontVariant: ['tabular-nums'] },
 });

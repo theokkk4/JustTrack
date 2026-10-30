@@ -2,6 +2,12 @@ export const APP_NAME = 'JustTrack';
 export const TAGLINE = 'Track food. Track progress. Just Track.';
 export const REPOSITORY_URL = 'https://github.com/theokkk4/JustTrack';
 
+/** Where it's from, and the promise that makes it different. */
+export const HOMETOWN = 'Philadelphia';
+export const HOMETOWN_LINE = 'Made in Philly for college students — free for everyone.';
+export const PROMISES = ['No account', 'No ads', 'Nothing kept past 24 hours'] as const;
+export const PRIVACY_LINE = 'Your log lives on this device and clears itself 24 hours after each entry. Nothing is uploaded.';
+
 /**
  * The JT monogram, traced from the brand artwork onto a 713×500 grid.
  * assets/brand/jt-mark.svg is generated from these same paths.

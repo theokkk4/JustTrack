@@ -11,7 +11,7 @@ import type { FoodDetail, FoodServing, MetricUnit } from '@/types';
 
 const SEARCH_URL = 'https://search.openfoodfacts.org/search';
 const PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product';
-const FIELDS = 'code,product_name,brands,nutriments,serving_size,serving_quantity,serving_quantity_unit';
+const FIELDS = 'code,product_name,brands,nutriments,serving_size,serving_quantity,serving_quantity_unit,image_front_url';
 export const OFF_PAGE_SIZE = 20;
 
 /** OFF asks apps to identify themselves. Browsers won't let pages set User-Agent, so only native does. */
@@ -26,6 +26,7 @@ interface OffProduct {
   serving_size?: unknown;
   serving_quantity?: unknown;
   serving_quantity_unit?: unknown;
+  image_front_url?: unknown;
 }
 
 const round1 = (value: number) => Math.round(value * 10) / 10;
@@ -81,7 +82,8 @@ export function normalizeOffProduct(product: OffProduct): FoodDetail | null {
   }
   servings.push({ id: `100${unit}`, description: `100 ${unit}`, metricAmount: 100, metricUnit: unit, isDefault: servings.length === 0, ...scaled(100) });
 
-  return { id: `off:${code}`, source: 'openfoodfacts', externalId: code, name, brand: text(product.brands), servings };
+  const imageUrl = text(product.image_front_url);
+  return { id: `off:${code}`, source: 'openfoodfacts', externalId: code, name, brand: text(product.brands), imageUrl: imageUrl?.startsWith('https://') ? imageUrl : null, servings };
 }
 
 export interface OffSearchPage {

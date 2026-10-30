@@ -6,12 +6,10 @@ import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ProfileLoadError } from '@/components/ProfileLoadError';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { DiaryProvider } from '@/contexts/DiaryContext';
-import { OnboardingProvider } from '@/contexts/OnboardingContext';
-import { PreferencesProvider } from '@/contexts/PreferencesContext';
+import { PhoneFrame } from '@/components/layout/PhoneFrame';
+import { StoreGate } from '@/components/StoreGate';
 import { ThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
+import { useSettings } from '@/hooks/useSettings';
 
 export { AppErrorBoundary as ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -23,15 +21,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <PreferencesProvider>
-            <AuthProvider>
-              <OnboardingProvider>
-                <DiaryProvider>
-                  <RootNavigator />
-                </DiaryProvider>
-              </OnboardingProvider>
-            </AuthProvider>
-          </PreferencesProvider>
+          <StoreGate>
+            <PhoneFrame>
+              <RootNavigator />
+            </PhoneFrame>
+          </StoreGate>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
@@ -40,59 +34,40 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { isDark, colors } = useAppTheme();
-  const { status } = useAuth();
+  const { welcomed } = useSettings();
 
-  // The native splash stays up until we know whether someone is signed in.
   useEffect(() => {
-    if (status !== 'loading') SplashScreen.hideAsync();
-  }, [status]);
+    SplashScreen.hideAsync();
+  }, []);
 
   const navigationTheme = useMemo(() => {
     const base = isDark ? DarkTheme : DefaultTheme;
     return {
       ...base,
-      colors: {
-        ...base.colors,
-        primary: colors.accent,
-        background: colors.background,
-        card: colors.background,
-        text: colors.text,
-        border: colors.border,
-      },
+      colors: { ...base.colors, primary: colors.accent, background: colors.background, card: colors.background, text: colors.text, border: colors.border },
     };
   }, [isDark, colors]);
-
-  if (status === 'loading') return null;
-
-  const ready = status === 'ready';
 
   return (
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      {status === 'error' ? (
-        <ProfileLoadError />
-      ) : (
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-          <Stack.Protected guard={ready}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="food" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="entry/[id]" options={{ presentation: 'modal', headerShown: true, title: 'Edit Entry' }} />
-            <Stack.Screen
-              name="settings/goals"
-              options={{ headerShown: true, title: 'Nutrition Goals', headerBackTitle: 'Profile' }}
-            />
-          </Stack.Protected>
-          <Stack.Protected guard={!ready}>
-            <Stack.Screen name="onboarding" />
-          </Stack.Protected>
-          <Stack.Protected guard={status === 'signedOut'}>
-            <Stack.Screen name="sign-in" options={{ presentation: 'modal' }} />
-          </Stack.Protected>
-          <Stack.Screen name="auth-callback" options={{ gestureEnabled: false }} />
-          <Stack.Screen name="reset-password" options={{ gestureEnabled: false }} />
-          <Stack.Screen name="+not-found" options={{ headerShown: true, title: 'Not Found' }} />
-        </Stack>
-      )}
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+        <Stack.Protected guard={welcomed}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="food" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="entry/[id]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="scan/review" options={{ presentation: 'modal', gestureEnabled: false }} />
+          <Stack.Screen name="scan/barcode" options={{ presentation: 'modal' }} />
+          <Stack.Screen
+            name="settings/goal"
+            options={{ presentation: 'modal', headerShown: true, title: 'Daily Goal', headerShadowVisible: false, headerTintColor: colors.text, headerStyle: { backgroundColor: colors.background } }}
+          />
+        </Stack.Protected>
+        <Stack.Protected guard={!welcomed}>
+          <Stack.Screen name="welcome" />
+        </Stack.Protected>
+        <Stack.Screen name="+not-found" options={{ headerShown: true, title: 'Not Found' }} />
+      </Stack>
     </NavigationThemeProvider>
   );
 }
