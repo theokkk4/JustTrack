@@ -8,12 +8,12 @@
 
 ## One-line
 
-A calorie tracker with no account, no ads, and no subscription: photograph a meal and get per-item nutrition estimates, or log from 20 built-in fast-food menus, with everything stored on the phone.
+A calorie tracker with no account, no ads, and no subscription: photograph a meal and get per-item nutrition estimates, or log from 30 built-in restaurant menus, with everything stored on the phone.
 
 ## What it does
 
 - **Photo logging.** Point the camera at a plate; a vision model identifies each food, estimates the portion, and returns calories and macros. Results are labelled *Estimated* and every value is editable before it's logged.
-- **20 fast-food chains, 6,000+ items, offline.** McDonald's, Chick-fil-A, Chipotle, Starbucks, Taco Bell, and 15 more, with the chains' own nutrition numbers bundled in the app.
+- **30 restaurant chains, 8,500+ items, offline.** McDonald's, Chick-fil-A, Chipotle, Starbucks, Taco Bell, and 15 more, with the chains' own nutrition numbers bundled in the app.
 - **Order builders.** Searching Chipotle, Subway, Panda Express, or Jersey Mike's opens a builder where you pick protein, rice, beans, toppings, size, and sides exactly as you'd order at the counter.
 - **Everyday foods and barcodes** from the USDA database and Open Food Facts, with duplicate-aware search.
 - **Day and week views.** Calories left, macro rings, meals by time of day, seven-day trend.
@@ -41,7 +41,7 @@ A calorie tracker with no account, no ads, and no subscription: photograph a mea
 
 - Built and shipped **JustTrack**, a free, open-source calorie-tracking app for iOS and web (React Native, Expo, TypeScript), from design through App Store submission.
 - Designed a photo-to-nutrition pipeline using a vision LLM with schema-validated JSON output, on-device image preprocessing, and a serverless proxy that keeps credentials off the client.
-- Harvested and normalised 6,000+ menu items from 20 restaurant chains into an offline dataset, with instant local search and interactive order builders for four chains.
+- Harvested and normalised 8,500+ menu items from 20 restaurant chains into an offline dataset, with instant local search and interactive order builders for four chains.
 - Maintained a 170-test Jest suite and a Playwright end-to-end suite run against production builds.
 
 ## Short bio line

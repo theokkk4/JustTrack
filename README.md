@@ -7,7 +7,7 @@ A free calorie and macro tracker made in Philadelphia for college students — a
 - **Snap your meal.** Photograph your plate and an AI estimate names what's on it and sizes the portions. You review and fix it before anything is logged, and it's always labeled *Estimated*.
 - **Scan a barcode** for packaged foods (Open Food Facts).
 - **Search** 5,000+ everyday foods with real portions ("1 cup", "1 medium") from the USDA database that ships inside the app — instant and offline.
-- **Fast food, by name.** The menus of the 20 biggest U.S. chains (McDonald's, Starbucks, Chick-fil-A, Chipotle, Taco Bell…) — 6,000+ items with calories and macros — are bundled too. Type "chipotle chicken bowl" or "cfa spicy sandwich", and when the scanner recognizes a chain's cup or wrapper it snaps the item to the menu's real nutrition instead of estimating.
+- **Fast food, by name.** The menus of the 20 biggest U.S. chains (McDonald's, Starbucks, Chick-fil-A, Chipotle, Taco Bell…) — 8,500+ items with calories and macros — are bundled too. Type "chipotle chicken bowl" or "cfa spicy sandwich", and when the scanner recognizes a chain's cup or wrapper it snaps the item to the menu's real nutrition instead of estimating.
 - A daily calorie goal, by hand or estimated from a few body stats, optional macro targets, and a *Today* view with a balance score and calories by meal.
 
 Open source under the MIT license.

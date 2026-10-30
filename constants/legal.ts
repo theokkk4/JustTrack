@@ -64,7 +64,7 @@ export const SUPPORT_SECTIONS: readonly LegalSection[] = [
   },
   {
     heading: 'A restaurant item is missing',
-    paragraphs: ['Menus for 20 chains are bundled and updated with each release. Tell us which item at the issue tracker above and it will be in the next update.'],
+    paragraphs: ['Menus for 32 chains are bundled and updated with each release. Tell us which item at the issue tracker above and it will be in the next update.'],
   },
   {
     heading: 'My data',

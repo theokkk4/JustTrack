@@ -40,7 +40,7 @@ Before the first push, replace the two placeholders in `store.config.json` under
 **Promotional text (170)**
 
 ```
-Free and open source. No account, no ads, no subscription. Snap a photo, pick from 20 fast-food menus, or build your Chipotle bowl. Your data stays on your phone.
+Free and open source. No account, no ads, no subscription. Snap a photo, pick from 30 restaurant menus, or build your Chipotle bowl. Your data stays on your phone.
 ```
 
 **Description (4000)**
@@ -51,8 +51,8 @@ JustTrack is the free, open-source calorie tracker. No account, no ads, no subsc
 SNAP YOUR FOOD
 Take a photo of your plate and JustTrack estimates each food on it: what it is, how much, and the calories, protein, carbs, and fat. Adjust the grams, swap anything for an exact database entry, and log it in one tap. Estimates are labelled so you always know what's measured and what's approximate.
 
-20 FAST-FOOD MENUS BUILT IN
-McDonald's, Starbucks, Chick-fil-A, Taco Bell, Dunkin', Wendy's, Chipotle, Burger King, Domino's, Subway, Panda Express, Panera Bread, Popeyes, Raising Cane's, Sonic, Pizza Hut, Dairy Queen, Wingstop, KFC, and Jersey Mike's. Over 6,000 items with the chains' own nutrition numbers, and they work offline.
+30 RESTAURANT MENUS BUILT IN
+McDonald's, Chick-fil-A, Chipotle, Starbucks, Taco Bell, Dunkin', Wendy's, Burger King, Subway, Panda Express, Domino's, Panera, Popeyes, Raising Cane's, KFC, Jersey Mike's, Sonic, Pizza Hut, Dairy Queen, Wingstop, Arby's, Little Caesars, Papa John's, Jamba, Insomnia Cookies, Freshens, Wawa, 7-Eleven, Applebee's, Auntie Anne's, 7 Brew, and Hangry Joe's. Over 8,500 items with the chains' own nutrition numbers, and they work offline. Tap a logo to browse a menu like the menu board, or search across all of them.
 
 BUILD IT LIKE YOU ORDER IT
 Searching Chipotle, Subway, Panda Express, or Jersey Mike's opens an order builder. Pick the protein, rice, beans, toppings, size, and sides exactly as you'd order at the counter. The total comes from the menu.
@@ -81,7 +81,7 @@ calorie counter,free,open source,food tracker,macro,diet,chipotle,fast food,nutr
 **What's New (first release)**
 
 ```
-First release. Free and open source. Snap a photo to log a meal, search 20 fast-food menus, build your Chipotle, Subway, Panda Express, or Jersey Mike's order, and track calories and macros without an account.
+First release. Free and open source. Snap a photo to log a meal, search 30 restaurant menus, build your Chipotle, Subway, Panda Express, or Jersey Mike's order, and track calories and macros without an account.
 ```
 
 | Field | Value |
