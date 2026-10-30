@@ -1,17 +1,16 @@
-import Anthropic from '@anthropic-ai/sdk';
-import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
+import { ApiError, GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
 
 /**
  * POST /api/analyze-meal — the only server-side code in JustTrack.
  *
- * Takes a photo, asks Claude what food is on the plate and roughly how much,
+ * Takes a photo, asks Gemini what food is on the plate and roughly how much,
  * and returns per-item nutrition estimates for the user to review. Runs as a
  * Vercel function so the API key never ships inside the app. The photo is
- * sent to the model and not stored anywhere.
+ * sent to the model with storage turned off and is not kept anywhere.
  */
 
-const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-fable-5-1';
+const MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.5-flash-lite';
 /** Base64 is 4/3 of the bytes: this is about a 2 MB image. The app sends ~300 KB. */
 const MAX_IMAGE_CHARS = 2_800_000;
 const MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -28,9 +27,12 @@ const EstimatedFoodSchema = z.object({
 });
 
 const MealAnalysisSchema = z.object({
-  foods: z.array(EstimatedFoodSchema).describe('Each distinct food visible, largest first. Empty if there is no food.'),
-  note: z.string().nullable().describe('One short sentence the user should know, e.g. part of the plate is hidden, or null.'),
+  foods: z.array(EstimatedFoodSchema).max(12).describe('Each distinct food visible, largest first. Empty if there is no food.'),
+  note: z.string().describe('One short sentence the user should know, e.g. part of the plate is hidden. Empty string if nothing.'),
 });
+
+/** Gemini takes standard JSON Schema; the `$schema` marker is the one key it doesn't want. */
+const { $schema: _ignored, ...RESPONSE_SCHEMA } = z.toJSONSchema(MealAnalysisSchema);
 
 const SYSTEM_PROMPT = `You identify food in a photo for a calorie-tracking app used by college students.
 
@@ -58,7 +60,7 @@ function failure(status: number, code: string, message: string): Response {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return failure(503, 'not_configured', 'The photo scanner isn’t set up on this server yet.');
   }
@@ -80,41 +82,41 @@ export async function POST(request: Request): Promise<Response> {
     return failure(400, 'bad_request', 'Send a JPEG, PNG, or WebP photo under 2 MB.');
   }
 
-  const client = new Anthropic({ apiKey });
+  const client = new GoogleGenAI({ apiKey });
   try {
-    const response = await client.messages.parse({
+    const interaction = await client.interactions.create({
       model: MODEL,
-      max_tokens: 4000,
-      system: SYSTEM_PROMPT,
-      output_config: { effort: 'low', format: zodOutputFormat(MealAnalysisSchema) },
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
-            { type: 'text', text: 'What food is in this photo, and roughly how much of each?' },
-          ],
-        },
+      system_instruction: SYSTEM_PROMPT,
+      input: [
+        { type: 'image', data: image, mime_type: mediaType },
+        { type: 'text', text: 'What food is in this photo, and roughly how much of each?' },
       ],
+      response_format: { type: 'text', mime_type: 'application/json', schema: RESPONSE_SCHEMA },
+      store: false,
     });
 
-    if (response.stop_reason === 'refusal') {
-      return failure(422, 'declined', 'We couldn’t analyze that photo. Try a clearer shot of the food itself.');
-    }
-    if (!response.parsed_output) {
+    const parsed = MealAnalysisSchema.safeParse(interaction.output_text ? JSON.parse(interaction.output_text) : null);
+    if (!parsed.success) {
+      console.error('analyze-meal: unparseable output', interaction.status, interaction.errors);
       return failure(502, 'bad_response', 'The photo scanner sent back something we couldn’t read. Please try again.');
     }
-    return json(response.parsed_output);
+    return json({ foods: parsed.data.foods, note: parsed.data.note.trim() || null });
   } catch (error) {
-    if (error instanceof Anthropic.AuthenticationError) {
-      return failure(503, 'not_configured', 'The server’s AI key was rejected. Check ANTHROPIC_API_KEY.');
-    }
-    if (error instanceof Anthropic.RateLimitError) {
-      return failure(429, 'rate_limited', 'The photo scanner is busy right now. Try again in a minute.');
-    }
-    if (error instanceof Anthropic.APIError) {
+    if (error instanceof ApiError) {
+      if (error.status === 401 || error.status === 403) {
+        return failure(503, 'not_configured', 'The server’s AI key was rejected. Check GEMINI_API_KEY.');
+      }
+      if (error.status === 429) {
+        return failure(429, 'rate_limited', 'The photo scanner is busy right now. Try again in a minute.');
+      }
+      if (error.status === 400 && /safety|blocked|prohibited/i.test(error.message)) {
+        return failure(422, 'declined', 'We couldn’t analyze that photo. Try a clearer shot of the food itself.');
+      }
       console.error('analyze-meal: API error', error.status, error.message);
       return failure(502, 'upstream_error', 'The photo scanner had a problem. Please try again.');
+    }
+    if (error instanceof SyntaxError) {
+      return failure(502, 'bad_response', 'The photo scanner sent back something we couldn’t read. Please try again.');
     }
     console.error('analyze-meal: unexpected error', error);
     return failure(500, 'internal', 'Something went wrong on our end. Please try again.');

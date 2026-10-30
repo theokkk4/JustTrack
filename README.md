@@ -44,10 +44,10 @@ The USDA data is public domain (FoodData Central, FNDDS). Rebuild `assets/data/u
 The web app and its two functions deploy together from this repository.
 
 1. Import the repository on [vercel.com](https://vercel.com/new). `vercel.json` already sets the build (`npx expo export --platform web` → `dist/`).
-2. In the project's **Settings → Environment Variables**, add `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`, default `claude-fable-5-1`). Without it the photo scanner shows "isn't set up on this server yet"; everything else works.
+2. In the project's **Settings → Environment Variables**, add `GEMINI_API_KEY` (a Google AI Studio key; optionally `GEMINI_MODEL`, default `gemini-3.5-flash-lite`). Without it the photo scanner shows "isn't set up on this server yet"; everything else works.
 3. Deploy. Open the URL on your phone — add it to the home screen for an app-like feel.
 
-The key never ships in the app: `api/analyze-meal.ts` is the only code that sees it. Photos are sent to the model for analysis and not stored. The function rate-limits per address; for a public launch, add Vercel's firewall rate limiting as well.
+The key never ships in the app: `api/analyze-meal.ts` is the only code that sees it. Photos are sent to Gemini for analysis with storage turned off and are not kept. Note that on Google's free tier, requests may be used to improve their products; a paid key avoids that. The function rate-limits per address; for a public launch, add Vercel's firewall rate limiting as well.
 
 ## iOS
 
