@@ -88,6 +88,7 @@ export default function ReviewScreen() {
       createEntry(
         {
           ...entryFromEstimate({ name: row.name, portionDescription: row.portionDescription, estimatedGrams: row.grams, confidence: row.confidence, ...rowNutrition(row) }, mealType),
+          imageUri: state.thumbnailUri,
           ...(row.matchedFood ? { source: row.matchedFood.source, externalFoodId: row.matchedFood.externalId, brand: row.matchedFood.brand } : {}),
         },
         new Date()

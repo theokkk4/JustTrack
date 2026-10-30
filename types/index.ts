@@ -58,13 +58,12 @@ export interface FoodDetail {
 }
 
 // ---------------------------------------------------------------------------
-// The 24-hour log
+// The log
 // ---------------------------------------------------------------------------
 
 /**
- * One thing eaten. Entries live only on this device and are forgotten
- * 24 hours after they were logged, so each carries everything needed to
- * show it — nothing is looked up later.
+ * One thing eaten. Entries live only on this device, and each carries
+ * everything needed to show it — nothing is looked up later.
  */
 export interface LogEntry extends NutritionValues {
   id: string;
@@ -83,6 +82,8 @@ export interface LogEntry extends NutritionValues {
   grams: number;
   /** Portion and nutrition came from the photo scanner, so the UI says "Estimated". */
   isEstimate: boolean;
+  /** A small picture of this food: the user's own meal photo (as a data URL) or a product photo. */
+  imageUri: string | null;
 }
 
 export type NewLogEntry = Omit<LogEntry, 'id' | 'loggedAt'>;

@@ -1,13 +1,14 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon } from '@/components/ui/AppIcon';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { Radii, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { foodEmojiFor } from '@/lib/food/foodEmoji';
 import { heroTintFor } from '@/lib/food/heroTint';
 
 interface FoodHeroProps {
@@ -38,7 +39,11 @@ export function FoodHero({ title, subtitle, amount, amountCaption, imageUri, tin
       {imageUri ? (
         <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} accessibilityIgnoresInvertColors />
       ) : (
-        <LinearGradient colors={[tintStart, tintEnd]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={[tintStart, tintEnd]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill}>
+          <Text style={styles.emoji} accessible={false}>
+            {foodEmojiFor(title, ...tintHints)}
+          </Text>
+        </LinearGradient>
       )}
       <LinearGradient colors={['rgba(20,12,40,0.55)', 'rgba(20,12,40,0.05)', 'rgba(20,12,40,0.55)']} style={StyleSheet.absoluteFill} pointerEvents="none" />
 
@@ -97,6 +102,7 @@ const styles = StyleSheet.create({
   titles: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: Spacing.lg, paddingHorizontal: Spacing.lg, paddingBottom: Spacing['3xl'] },
   titleBlock: { flex: 1, gap: 2 },
   amountBlock: { alignItems: 'flex-end' },
+  emoji: { position: 'absolute', right: 20, top: 92, fontSize: 132, lineHeight: 150, opacity: 0.95 },
   onPhoto: { color: '#FFFFFF' },
   onPhotoMuted: { color: 'rgba(255,255,255,0.8)' },
   tabular: { fontVariant: ['tabular-nums'] },

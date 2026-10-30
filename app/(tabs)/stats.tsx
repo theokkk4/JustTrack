@@ -9,20 +9,25 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { MEAL_TYPE_META } from '@/constants/nutrition';
 import { Radii, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { useLog } from '@/hooks/useLog';
 import { useSettings } from '@/hooks/useSettings';
-import { expiresAt, describeTimeLeft } from '@/lib/log/window';
+import { caloriesByDay } from '@/lib/log/day';
 import { balanceScore, MIN_CALORIES_FOR_SCORE } from '@/lib/nutrition/balance';
+import { addDays } from '@/utils/date';
 import { formatNumber } from '@/utils/format';
 
-/** The last 24 hours at a glance: balance, macros, calories by meal, and what clears next. */
+/** Today at a glance: balance, macros, calories by meal, and the week so far. */
 export default function TodayScreen() {
   const { colors } = useAppTheme();
-  const { entries, sections, totals, now } = useLog();
+  const { today } = useCurrentTime();
+  const { sections, totals, all } = useLog(today);
   const settings = useSettings();
   const balance = balanceScore(totals);
   const maxMeal = Math.max(...sections.map((section) => section.totals.calories), 1);
-  const upcoming = [...entries].sort((a, b) => expiresAt(a) - expiresAt(b)).slice(0, 5);
+  const week = Array.from({ length: 7 }, (_, index) => addDays(today, index - 6));
+  const weekCalories = caloriesByDay(all, week);
+  const maxDay = Math.max(...weekCalories, settings.calorieGoal, 1);
   const progress = settings.calorieGoal > 0 ? Math.min(totals.calories / settings.calorieGoal, 1) : 0;
 
   return (
@@ -93,23 +98,22 @@ export default function TodayScreen() {
         </Card>
 
         <Card style={styles.card}>
-          <ThemedText variant="headline">Clearing soon</ThemedText>
-          {upcoming.length === 0 ? (
-            <ThemedText variant="footnote" color="secondary">
-              Nothing logged in the last 24 hours.
-            </ThemedText>
-          ) : (
-            upcoming.map((entry) => (
-              <View key={entry.id} style={styles.expiryRow}>
-                <ThemedText variant="subhead" numberOfLines={1} style={styles.expiryName}>
-                  {entry.foodName}
-                </ThemedText>
-                <ThemedText variant="footnote" color="secondary">
-                  {describeTimeLeft(expiresAt(entry) - now)}
+          <ThemedText variant="headline">Last 7 days</ThemedText>
+          <View style={styles.week} accessible accessibilityLabel={week.map((day, index) => `${day.toLocaleDateString('en-US', { weekday: 'long' })} ${formatNumber(weekCalories[index])} calories`).join(', ')}>
+            {week.map((day, index) => (
+              <View key={day.toISOString()} style={styles.weekDay}>
+                <View style={[styles.weekTrack, { backgroundColor: colors.backgroundSecondary }]}>
+                  <View style={[styles.weekFill, { height: `${Math.round((weekCalories[index] / maxDay) * 100)}%`, backgroundColor: index === 6 ? colors.accent : colors.gradientMiddle }]} />
+                </View>
+                <ThemedText variant="caption2" color={index === 6 ? 'primary' : 'secondary'}>
+                  {day.toLocaleDateString('en-US', { weekday: 'narrow' })}
                 </ThemedText>
               </View>
-            ))
-          )}
+            ))}
+          </View>
+          <ThemedText variant="caption1" color="tertiary">
+            Calories logged each day, against your {formatNumber(settings.calorieGoal)} kcal goal.
+          </ThemedText>
         </Card>
       </View>
     </ScrollView>
@@ -131,7 +135,9 @@ const styles = StyleSheet.create({
   barTrack: { flex: 1, height: 10, borderRadius: Radii.full, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: Radii.full },
   barValue: { width: 48, textAlign: 'right' },
-  expiryRow: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md, paddingVertical: Spacing.xs },
-  expiryName: { flex: 1 },
+  week: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.sm, height: 110, paddingTop: Spacing.xs },
+  weekDay: { flex: 1, alignItems: 'center', gap: Spacing.xs },
+  weekTrack: { flex: 1, width: '100%', borderRadius: Radii.md, overflow: 'hidden', justifyContent: 'flex-end' },
+  weekFill: { width: '100%', borderRadius: Radii.md },
   tabular: { fontVariant: ['tabular-nums'] },
 });

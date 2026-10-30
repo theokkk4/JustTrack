@@ -1,8 +1,11 @@
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { EntryRow } from '@/components/food/EntryRow';
+import { FoodThumbStack } from '@/components/food/FoodThumb';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { MEAL_TYPE_META } from '@/constants/nutrition';
@@ -19,13 +22,18 @@ interface MealCardProps {
 
 /**
  * One meal: name, calories, the macro split as little pills, a + button,
- * and whatever's been logged to it.
+ * and whatever's been logged to it. When a meal has a photo, the photo is
+ * the card.
  */
 export function MealCard({ section, onAdd }: MealCardProps) {
   const { colors, shadows } = useAppTheme();
   const actions = useEntryActions();
   const meta = MEAL_TYPE_META[section.mealType];
   const hasEntries = section.entries.length > 0;
+  const cover = section.entries.find((entry) => entry.imageUri)?.imageUri ?? null;
+  const onCover = Boolean(cover);
+  const textColor = onCover ? '#FFFFFF' : colors.text;
+  const mutedColor = onCover ? 'rgba(255,255,255,0.8)' : colors.textSecondary;
   const shares = macroShares(section.totals);
   const pills = [
     { label: 'Protein', value: shares.protein },
@@ -35,43 +43,52 @@ export function MealCard({ section, onAdd }: MealCardProps) {
 
   return (
     <View style={[styles.card, shadows.sm, { backgroundColor: colors.surfaceTint, borderColor: colors.border }]}>
-      <View style={styles.header}>
-        <View style={styles.titleBlock}>
-          <ThemedText variant="headline" accessibilityRole="header">
-            {meta.label}
-          </ThemedText>
-          <ThemedText variant="footnote" color="secondary" style={styles.tabular}>
-            {hasEntries ? `${formatNumber(section.totals.calories)} kcal` : 'Nothing yet'}
-          </ThemedText>
+      <View style={[styles.top, onCover && styles.topCover]}>
+        {cover ? (
+          <>
+            <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} accessibilityIgnoresInvertColors />
+            <LinearGradient colors={['rgba(20,12,40,0.15)', 'rgba(20,12,40,0.7)']} style={StyleSheet.absoluteFill} pointerEvents="none" />
+          </>
+        ) : null}
+        <View style={styles.header}>
+          <View style={styles.titleBlock}>
+            <ThemedText variant="headline" style={{ color: textColor }} accessibilityRole="header">
+              {meta.label}
+            </ThemedText>
+            <ThemedText variant="footnote" style={[styles.tabular, { color: mutedColor }]}>
+              {hasEntries ? `${formatNumber(section.totals.calories)} kcal` : 'Nothing yet'}
+            </ThemedText>
+          </View>
+          {hasEntries && !cover ? <FoodThumbStack items={section.entries.map((entry) => ({ name: entry.foodName, imageUri: entry.imageUri, hints: [entry.brand] }))} /> : null}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onAdd();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`Add food to ${meta.label}`}
+            hitSlop={6}
+            style={({ pressed }) => [styles.addButton, shadows.sm, { backgroundColor: onCover ? '#FFFFFF' : colors.surface, opacity: pressed ? 0.7 : 1 }]}
+          >
+            <AppIcon name="plus" size={18} color={onCover ? '#17142B' : colors.text} weight="semibold" />
+          </Pressable>
         </View>
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onAdd();
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={`Add food to ${meta.label}`}
-          hitSlop={6}
-          style={({ pressed }) => [styles.addButton, shadows.sm, { backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 }]}
-        >
-          <AppIcon name="plus" size={18} color={colors.text} weight="semibold" />
-        </Pressable>
-      </View>
 
-      {hasEntries ? (
-        <View style={styles.pills} accessible accessibilityLabel={pills.map((pill) => `${pill.label} ${Math.round(pill.value * 100)} percent`).join(', ')}>
-          {pills.map((pill) => (
-            <View key={pill.label} style={[styles.pill, { backgroundColor: colors.surface }]}>
-              <ThemedText variant="caption2" color="secondary">
-                {pill.label}
-              </ThemedText>
-              <ThemedText variant="caption2" style={styles.tabular}>
-                {Math.round(pill.value * 100)}%
-              </ThemedText>
-            </View>
-          ))}
-        </View>
-      ) : null}
+        {hasEntries ? (
+          <View style={styles.pills} accessible accessibilityLabel={pills.map((pill) => `${pill.label} ${Math.round(pill.value * 100)} percent`).join(', ')}>
+            {pills.map((pill) => (
+              <View key={pill.label} style={[styles.pill, { backgroundColor: onCover ? 'rgba(255,255,255,0.22)' : colors.surface }]}>
+                <ThemedText variant="caption2" style={{ color: mutedColor }}>
+                  {pill.label}
+                </ThemedText>
+                <ThemedText variant="caption2" style={[styles.tabular, { color: textColor }]}>
+                  {Math.round(pill.value * 100)}%
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
 
       {hasEntries ? (
         <View style={[styles.entries, { borderTopColor: colors.border }]}>
@@ -94,8 +111,10 @@ export function MealCard({ section, onAdd }: MealCardProps) {
 
 const styles = StyleSheet.create({
   card: { borderRadius: Radii.xl, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.lg, paddingBottom: Spacing.md },
-  titleBlock: { gap: 2 },
+  top: { overflow: 'hidden' },
+  topCover: { minHeight: 132, justifyContent: 'flex-end' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md, padding: Spacing.lg, paddingBottom: Spacing.md },
+  titleBlock: { flex: 1, gap: 2 },
   addButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   pills: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg },
   pill: { flexDirection: 'row', gap: Spacing.xs, paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.xs, borderRadius: Radii.full },

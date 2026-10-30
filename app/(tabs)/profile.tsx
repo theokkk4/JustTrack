@@ -48,7 +48,7 @@ export default function ProfileScreen() {
       Alert.alert('Nothing to clear', 'Your log is already empty.');
       return;
     }
-    const confirmed = await confirmAsync({ title: 'Clear your log?', message: `This removes the ${count} ${count === 1 ? 'entry' : 'entries'} from the last 24 hours. It can’t be undone.`, confirmLabel: 'Clear' });
+    const confirmed = await confirmAsync({ title: 'Clear your log?', message: `This removes all ${count} ${count === 1 ? 'entry' : 'entries'} from this device. It can’t be undone.`, confirmLabel: 'Clear' });
     if (confirmed) clearLog();
   };
 

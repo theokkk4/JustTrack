@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 
+import { FoodThumb } from '@/components/food/FoodThumb';
 import { AppIcon, type AppIconName } from '@/components/ui/AppIcon';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { Radii, Spacing } from '@/constants/theme';
@@ -81,6 +82,7 @@ export function EntryRow({ entry, isLast, onOpen, onDuplicate, onDelete, onMore 
           !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
         ]}
       >
+        <FoodThumb name={entry.foodName} hints={[entry.brand]} imageUri={entry.imageUri} size={44} />
         <View style={styles.details}>
           <ThemedText variant="subheadEmphasized" numberOfLines={1}>
             {entry.foodName}

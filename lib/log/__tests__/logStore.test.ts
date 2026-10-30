@@ -13,6 +13,7 @@ const valid = {
   amountUnit: 'g',
   grams: 150,
   isEstimate: false,
+  imageUri: 'https://images.openfoodfacts.org/rice.jpg',
   calories: 195,
   protein: 4,
   carbs: 42,
@@ -33,7 +34,13 @@ describe('parseEntry', () => {
   });
 
   it('fills optional fields in safely', () => {
-    const { brand: _brand, externalFoodId: _id, isEstimate: _estimate, ...partial } = valid;
-    expect(parseEntry(partial)).toMatchObject({ brand: null, externalFoodId: null, isEstimate: false });
+    const { brand: _brand, externalFoodId: _id, isEstimate: _estimate, imageUri: _image, ...partial } = valid;
+    expect(parseEntry(partial)).toMatchObject({ brand: null, externalFoodId: null, isEstimate: false, imageUri: null });
+  });
+
+  it('keeps only safe pictures: https product photos and small inline thumbnails', () => {
+    expect(parseEntry({ ...valid, imageUri: 'data:image/jpeg;base64,/9j/4AAQ' })?.imageUri).toBe('data:image/jpeg;base64,/9j/4AAQ');
+    expect(parseEntry({ ...valid, imageUri: 'javascript:alert(1)' })?.imageUri).toBeNull();
+    expect(parseEntry({ ...valid, imageUri: `data:image/jpeg;base64,${'A'.repeat(130_000)}` })?.imageUri).toBeNull();
   });
 });

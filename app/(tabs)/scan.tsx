@@ -1,16 +1,38 @@
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { LiveCamera } from '@/components/scanner/LiveCamera';
 import { AppIcon, type AppIconName } from '@/components/ui/AppIcon';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { Radii, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { useMealScan } from '@/hooks/useMealScan';
 
-function Action({ icon, label, onPress, disabled }: { icon: AppIconName; label: string; onPress: () => void; disabled?: boolean }) {
+const VIOLET = '#8B6CFF';
+
+/** The four corners of the framing guide. */
+function Brackets() {
+  return (
+    <View pointerEvents="none" style={styles.brackets}>
+      {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
+        <View
+          key={corner}
+          style={[
+            styles.corner,
+            corner.startsWith('t') ? { top: 0, borderTopWidth: 3 } : { bottom: 0, borderBottomWidth: 3 },
+            corner.endsWith('l') ? { left: 0, borderLeftWidth: 3, borderTopLeftRadius: corner === 'tl' ? 10 : 0, borderBottomLeftRadius: corner === 'bl' ? 10 : 0 } : { right: 0, borderRightWidth: 3, borderTopRightRadius: corner === 'tr' ? 10 : 0, borderBottomRightRadius: corner === 'br' ? 10 : 0 },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
+function RoundButton({ icon, label, onPress, disabled }: { icon: AppIconName; label: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable
       onPress={onPress}
@@ -18,22 +40,102 @@ function Action({ icon, label, onPress, disabled }: { icon: AppIconName; label: 
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: Boolean(disabled) }}
-      style={({ pressed }) => [styles.action, { opacity: disabled ? 0.5 : pressed ? 0.8 : 1 }]}
+      hitSlop={8}
+      style={({ pressed }) => [styles.roundButton, { opacity: disabled ? 0.5 : pressed ? 0.7 : 1 }]}
     >
-      <AppIcon name={icon} size={20} color="#17142B" weight="semibold" />
-      <ThemedText variant="subheadEmphasized" style={styles.actionLabel}>
-        {label}
-      </ThemedText>
+      <AppIcon name={icon} size={22} color="#FFFFFF" weight="semibold" />
     </Pressable>
   );
 }
 
-/** The hero feature: photograph a meal, get an estimate. Barcodes and search sit underneath. */
+/**
+ * The hero feature. On the web this is a live viewfinder: frame the plate,
+ * tap the shutter, and the review screen names what's on it. Where the
+ * camera can't be used (no camera, access declined, native until the iOS
+ * build), the same screen offers the photo picker instead.
+ */
 export default function ScanScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { scan, analyze, busy } = useMealScan();
+  const [focused, setFocused] = useState(false);
+  const [fallback, setFallback] = useState<'denied' | 'no_camera' | 'unsupported' | null>(null);
+  const [ready, setReady] = useState(false);
+  const capture = useRef<(() => void) | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      return () => setFocused(false);
+    }, [])
+  );
+
+  const onCapture = useCallback(
+    (uri: string) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      void analyze({ uri });
+    },
+    [analyze]
+  );
+  const onUnavailable = useCallback((reason: 'denied' | 'no_camera' | 'unsupported') => setFallback(reason), []);
+  const bindCapture = useCallback((fn: (() => void) | null) => {
+    capture.current = fn;
+    setReady(fn !== null);
+  }, []);
+
+  if (fallback) return <ScanFallback reason={fallback} scan={scan} busy={busy} />;
+
+  return (
+    <View style={styles.viewfinder}>
+      <LiveCamera active={focused && !busy} onCapture={onCapture} onUnavailable={onUnavailable} bindCapture={bindCapture} />
+      <LinearGradient colors={['rgba(10,6,24,0.55)', 'rgba(10,6,24,0)']} style={[styles.topShade, { height: insets.top + 72 }]} pointerEvents="none" />
+      <View style={[styles.topBar, { paddingTop: insets.top + Spacing.sm }]}>
+        <View style={styles.roundButton} />
+        <ThemedText variant="headline" style={styles.onCamera} accessibilityRole="header">
+          Scanner
+        </ThemedText>
+        <RoundButton icon="barcode" label="Scan a barcode" onPress={() => router.push('/scan/barcode')} />
+      </View>
+
+      <Brackets />
+
+      <LinearGradient colors={['rgba(10,6,24,0)', 'rgba(10,6,24,0.7)']} style={styles.bottomShade} pointerEvents="none" />
+      <View style={styles.bottomBar}>
+        <ThemedText variant="footnote" style={styles.hint}>
+          {ready ? 'Frame the whole plate, then tap the shutter.' : 'Starting the camera…'}
+        </ThemedText>
+        <View style={styles.controls}>
+          <RoundButton icon="photo" label="Choose a photo" onPress={() => void scan('library')} disabled={busy} />
+          <Pressable
+            onPress={() => capture.current?.()}
+            disabled={!ready || busy}
+            accessibilityRole="button"
+            accessibilityLabel="Take photo"
+            accessibilityState={{ disabled: !ready || busy }}
+            style={({ pressed }) => [styles.shutter, { opacity: !ready || busy ? 0.5 : 1, transform: [{ scale: pressed ? 0.92 : 1 }] }]}
+          >
+            <View style={styles.shutterInner} />
+          </Pressable>
+          <RoundButton icon="search" label="Search by name" onPress={() => router.push('/food/search')} />
+        </View>
+        <ThemedText variant="caption2" style={styles.caption}>
+          Estimated nutrition · photos are analyzed, not kept
+        </ThemedText>
+      </View>
+    </View>
+  );
+}
+
+function ScanFallback({ reason, scan, busy }: { reason: 'denied' | 'no_camera' | 'unsupported'; scan: (from: 'camera' | 'library') => Promise<void>; busy: boolean }) {
   const router = useRouter();
   const { colors, shadows } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const { scan, busy } = useMealScan();
+  const note =
+    reason === 'denied'
+      ? 'Camera access is off for this site. Turn it on in your browser to use the live scanner, or choose a photo instead.'
+      : reason === 'no_camera'
+        ? 'No camera here — choose a photo of your plate instead.'
+        : 'Works best with the whole plate in frame and decent light.';
 
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.lg }]}>
@@ -41,7 +143,7 @@ export default function ScanScreen() {
         Scan
       </ThemedText>
       <ThemedText variant="body" color="secondary" style={styles.lede}>
-        Point your camera at the plate. JustTrack names what’s on it and estimates the calories — you check it, then log it.
+        Photograph the plate. JustTrack names what’s on it and estimates the calories — you check it, then log it.
       </ThemedText>
 
       <LinearGradient colors={[colors.gradientStart, colors.gradientMiddle]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.heroCard, shadows.lg]}>
@@ -55,10 +157,10 @@ export default function ScanScreen() {
           Snap your meal
         </ThemedText>
         <ThemedText variant="subhead" style={styles.heroText}>
-          Works best with the whole plate in frame and decent light.
+          {note}
         </ThemedText>
         <View style={styles.actions}>
-          <Action icon="camera" label="Take photo" onPress={() => void scan('camera')} disabled={busy} />
+          {reason === 'unsupported' ? <Action icon="camera" label="Take photo" onPress={() => void scan('camera')} disabled={busy} /> : null}
           <Action icon="photo" label="Choose photo" onPress={() => void scan('library')} disabled={busy} />
         </View>
       </LinearGradient>
@@ -104,7 +206,43 @@ export default function ScanScreen() {
   );
 }
 
+function Action({ icon, label, onPress, disabled }: { icon: AppIconName; label: string; onPress: () => void; disabled?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: Boolean(disabled) }}
+      style={({ pressed }) => [styles.action, { opacity: disabled ? 0.5 : pressed ? 0.8 : 1 }]}
+    >
+      <AppIcon name={icon} size={20} color="#17142B" weight="semibold" />
+      <ThemedText variant="subheadEmphasized" style={styles.actionLabel}>
+        {label}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
+const BRACKET = 220;
+const SHUTTER = 74;
+
 const styles = StyleSheet.create({
+  viewfinder: { flex: 1, backgroundColor: '#0A0618' },
+  topShade: { position: 'absolute', top: 0, left: 0, right: 0 },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg },
+  onCamera: { color: '#FFFFFF' },
+  roundButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  brackets: { position: 'absolute', top: '50%', left: '50%', width: BRACKET, height: BRACKET, marginLeft: -BRACKET / 2, marginTop: -BRACKET / 2 - 40 },
+  corner: { position: 'absolute', width: 34, height: 34, borderColor: VIOLET },
+  bottomShade: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 220 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center', gap: Spacing.lg, paddingBottom: Spacing.lg, paddingHorizontal: Spacing.lg },
+  hint: { color: 'rgba(255,255,255,0.85)', textAlign: 'center' },
+  controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing['2xl'] },
+  shutter: { width: SHUTTER, height: SHUTTER, borderRadius: SHUTTER / 2, borderWidth: 4, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  shutterInner: { width: SHUTTER - 16, height: SHUTTER - 16, borderRadius: (SHUTTER - 16) / 2, backgroundColor: '#FFFFFF' },
+  caption: { color: 'rgba(255,255,255,0.6)', textAlign: 'center' },
+  // Fallback
   content: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing['5xl'], gap: Spacing.md },
   lede: { marginBottom: Spacing.sm },
   heroCard: { borderRadius: Radii['2xl'], padding: Spacing['2xl'], gap: Spacing.sm },

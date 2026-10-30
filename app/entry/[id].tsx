@@ -84,7 +84,7 @@ export default function EditEntryScreen() {
   if (!entry) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <EmptyState icon="clock" title="This entry is gone" message="Entries clear 24 hours after they’re logged." actionLabel="Close" onAction={() => router.back()} />
+        <EmptyState icon="clock" title="This entry is gone" message="It was deleted or cleared." actionLabel="Close" onAction={() => router.back()} />
       </View>
     );
   }
@@ -98,6 +98,7 @@ export default function EditEntryScreen() {
         subtitle={entry.brand ?? MEAL_TYPE_META[entry.mealType].label}
         amount={portion.description ?? amountLabel(entry)}
         amountCaption="portion"
+        imageUri={entry.imageUri}
         tintHints={[databaseFood?.category, entry.brand]}
         badge={entry.isEstimate ? 'ESTIMATED' : 'EDIT'}
         onBack={() => router.back()}

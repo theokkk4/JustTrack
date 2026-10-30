@@ -2,7 +2,7 @@
 
 **Track food. Track progress. Just Track.**
 
-A free calorie and macro tracker made in Philadelphia for college students — and anyone else. No account, no ads, no subscription. Your log lives on your device and clears itself 24 hours after each entry; nothing is uploaded.
+A free calorie and macro tracker made in Philadelphia for college students — and anyone else. No account, no ads, no subscription. Your log lives on your device; nothing is uploaded.
 
 - **Snap your meal.** Photograph your plate and an AI estimate names what's on it and sizes the portions. You review and fix it before anything is logged, and it's always labeled *Estimated*.
 - **Scan a barcode** for packaged foods (Open Food Facts).
@@ -31,7 +31,7 @@ npm test                # jest
 | Piece | Where |
 | --- | --- |
 | Screens (Expo Router) | `app/` — tabs: Home, Today, Scan, Profile; modals for Add Food, Edit Entry, Scan Review, Barcode, Goal |
-| The 24-hour log and settings | `lib/log/`, `lib/settings/` — in-memory stores mirrored to on-device storage (`localStorage` on the web) |
+| The log and settings | `lib/log/`, `lib/settings/` — in-memory stores mirrored to on-device storage (`localStorage` on the web) |
 | Nutrition math | `lib/nutrition/` — portion scaling, calorie targets (Mifflin–St Jeor), the balance score |
 | Food data | `lib/food/` — the bundled USDA database with its ranking, Open Food Facts, category tints |
 | Photo scan | `hooks/useMealScan.ts` → `lib/scan/` → `api/analyze-meal.ts` |
@@ -55,4 +55,4 @@ The same code builds as a native iOS app with EAS (`eas build --platform ios`). 
 
 ## Privacy
 
-There is no account and no analytics. The log is stored only on the device and entries are dropped 24 hours after they're logged. Meal photos are sent to the analysis function and are not kept. See `app/(tabs)/profile.tsx` for what the app tells users.
+There is no account and no analytics. The log, goals, and name are stored only on the device. Meal photos are sent to the analysis function and are not kept. See `app/(tabs)/profile.tsx` for what the app tells users.

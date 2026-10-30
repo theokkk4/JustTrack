@@ -22,6 +22,8 @@ export interface ReviewRow {
 
 export interface ReviewState {
   photoUri: string | null;
+  /** A small copy of the photo that's saved with the entries, so meal cards show the plate. */
+  thumbnailUri: string | null;
   status: 'idle' | 'analyzing' | 'ready' | 'error';
   error: string | null;
   errorCode: string | null;
@@ -29,7 +31,7 @@ export interface ReviewState {
   rows: ReviewRow[];
 }
 
-const EMPTY: ReviewState = { photoUri: null, status: 'idle', error: null, errorCode: null, note: null, rows: [] };
+const EMPTY: ReviewState = { photoUri: null, thumbnailUri: null, status: 'idle', error: null, errorCode: null, note: null, rows: [] };
 
 let state: ReviewState = EMPTY;
 const listeners = new Set<() => void>();
@@ -68,6 +70,10 @@ export function rowNutrition(row: ReviewRow): NutritionValues {
 
 export function startAnalysis(photoUri: string): void {
   publish({ ...EMPTY, photoUri, status: 'analyzing' });
+}
+
+export function setReviewThumbnail(thumbnailUri: string | null): void {
+  publish({ ...state, thumbnailUri });
 }
 
 export function finishAnalysis(analysis: MealAnalysis): void {

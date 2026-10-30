@@ -33,6 +33,7 @@ export function entryFromFood(food: FoodDetail, portion: StoredPortion, mealType
     amountUnit: portion.amountUnit,
     grams: round((serving.metricAmount ?? 0) * portion.servings, 1),
     isEstimate: false,
+    imageUri: food.imageUrl ?? null,
     ...nutrition,
   };
 }
@@ -50,6 +51,7 @@ export function entryFromEstimate(food: EstimatedFood, mealType: MealType): NewL
     amountUnit: 'g',
     grams: round(food.estimatedGrams, 1),
     isEstimate: true,
+    imageUri: null,
     calories: round(food.calories, 1),
     protein: round(food.protein, 1),
     carbs: round(food.carbs, 1),
@@ -108,6 +110,7 @@ export function entryAsFood(entry: LogEntry): FoodDetail | null {
     externalId: entry.externalFoodId ?? entry.id,
     name: entry.foodName,
     brand: entry.brand,
+    imageUrl: entry.imageUri,
     servings: [serving],
   };
 }

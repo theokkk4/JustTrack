@@ -82,6 +82,7 @@ describe('buildMealSections / macroShares', () => {
     amountUnit: 'serving',
     grams: 100,
     isEstimate: false,
+    imageUri: null,
     calories,
     protein: 10,
     carbs: 20,

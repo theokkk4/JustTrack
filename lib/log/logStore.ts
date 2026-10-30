@@ -1,15 +1,20 @@
 import { createPersistedStore } from '@/lib/storage/persistedStore';
 import type { AmountUnit, FoodSource, LogEntry, MealType } from '@/types';
 import { MEAL_TYPES } from '@/constants/nutrition';
-import { liveEntries } from './window';
 
-/** The on-device log. Saved as one JSON array; entries past 24 hours are dropped on every read. */
+/** The on-device log. Saved as one JSON array; nothing leaves the device and nothing expires. */
 
 const SOURCES: readonly FoodSource[] = ['usda', 'openfoodfacts', 'custom', 'ai_estimate'];
 const AMOUNT_UNITS: readonly AmountUnit[] = ['serving', 'g', 'ml'];
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
+}
+
+/** A product URL or a small inline thumbnail; anything else (or anything huge) is dropped. */
+const MAX_IMAGE_URI_LENGTH = 120_000;
+function isImageUri(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= MAX_IMAGE_URI_LENGTH && (value.startsWith('https://') || value.startsWith('data:image/') || value.startsWith('file://'));
 }
 
 function oneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
@@ -49,6 +54,7 @@ export function parseEntry(raw: unknown): LogEntry | null {
     amountUnit: item.amountUnit,
     grams: item.grams,
     isEstimate: item.isEstimate === true,
+    imageUri: isImageUri(item.imageUri) ? item.imageUri : null,
     calories: item.calories,
     protein: item.protein,
     carbs: item.carbs,
@@ -58,10 +64,7 @@ export function parseEntry(raw: unknown): LogEntry | null {
 
 function parseEntries(raw: unknown): LogEntry[] | null {
   if (!Array.isArray(raw)) return null;
-  return liveEntries(
-    raw.map(parseEntry).filter((entry): entry is LogEntry => entry !== null),
-    Date.now()
-  );
+  return raw.map(parseEntry).filter((entry): entry is LogEntry => entry !== null);
 }
 
 export const logStore = createPersistedStore<LogEntry[]>('justtrack.log.v1', [], parseEntries);
@@ -80,13 +83,4 @@ export function removeEntry(id: string): void {
 
 export function clearLog(): void {
   logStore.set([]);
-}
-
-/** Drops expired entries from storage. Returns true if anything was removed. */
-export function pruneLog(now: number): boolean {
-  const current = logStore.getSnapshot();
-  const live = liveEntries(current, now);
-  if (live.length === current.length) return false;
-  logStore.set(live);
-  return true;
 }
