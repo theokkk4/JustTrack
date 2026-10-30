@@ -115,13 +115,15 @@ export default function ProfileScreen() {
 
         <ListSection title="Privacy" footer={`${PRIVACY_LINE} Meal photos are sent to the scanner for analysis and are not kept.`}>
           <ListRow icon="shield" iconBackground={colors.success} title="No account, no tracking" showChevron={false} />
+          <ListRow icon="privacy" iconBackground={colors.accent} title="Privacy policy" onPress={() => router.push('/privacy')} />
           <ListRow icon="trash" iconBackground={colors.danger} title="Clear my log" onPress={() => void confirmClear()} destructive isLast />
         </ListSection>
 
         <ListSection title="About" footer={`${APP_NAME} ${version} · ${TAGLINE}`}>
           <ListRow icon="pin" iconBackground={colors.accent} title="Made in Philadelphia" showChevron={false} />
           <ListRow icon="openSource" iconBackground={colors.textSecondary} title="Open source on GitHub" onPress={() => void WebBrowser.openBrowserAsync(REPOSITORY_URL)} />
-          <ListRow icon="info" iconBackground={colors.textTertiary} title="Food data: USDA & Open Food Facts" onPress={() => void WebBrowser.openBrowserAsync('https://world.openfoodfacts.org')} isLast />
+          <ListRow icon="info" iconBackground={colors.textTertiary} title="Food data: USDA & Open Food Facts" onPress={() => void WebBrowser.openBrowserAsync('https://world.openfoodfacts.org')} />
+          <ListRow icon="heart" iconBackground={colors.danger} title="Help & support" onPress={() => router.push('/support')} isLast />
         </ListSection>
       </View>
     </ScrollView>

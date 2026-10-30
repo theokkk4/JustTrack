@@ -70,6 +70,8 @@ function RootNavigator() {
         <Stack.Protected guard={!welcomed}>
           <Stack.Screen name="welcome" />
         </Stack.Protected>
+        <Stack.Screen name="privacy" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="support" options={{ presentation: 'modal' }} />
         <Stack.Screen name="+not-found" options={{ headerShown: true, title: 'Not Found' }} />
       </Stack>
     </NavigationThemeProvider>
