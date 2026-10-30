@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Ring } from '@/components/ui/Ring';
 import { ThemedText } from '@/components/ui/ThemedText';
-import { Radii, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { macroShares } from '@/lib/log/entries';
 import type { MacroGoals, NutritionValues } from '@/types';
@@ -11,7 +11,7 @@ import { formatNumber } from '@/utils/format';
 
 interface MacroRingsProps {
   totals: NutritionValues;
-  /** With targets set, each tile shows grams left; otherwise its share of today's calories. */
+  /** With targets set, each ring shows grams left; otherwise its share of today's calories. */
   goals?: MacroGoals | null;
 }
 
@@ -21,9 +21,9 @@ const MACROS = [
   { key: 'fat', label: 'Fat' },
 ] as const;
 
-/** Three white tiles, one gauge each: protein, carbs, fat. */
+/** Three rings in a row, the number inside each: protein, carbs, fat. No boxes, nothing to read twice. */
 export function MacroRings({ totals, goals }: MacroRingsProps) {
-  const { colors, shadows } = useAppTheme();
+  const { colors } = useAppTheme();
   const shares = macroShares(totals);
 
   return (
@@ -34,25 +34,22 @@ export function MacroRings({ totals, goals }: MacroRingsProps) {
         const left = goal - eaten;
         const progress = goals ? (goal > 0 ? eaten / goal : 0) : shares[key];
         const headline = goals ? `${formatNumber(Math.abs(left))}g` : `${Math.round(shares[key] * 100)}%`;
-        const caption = goals ? `${label} ${left < 0 ? 'over' : 'left'}` : label;
+        const caption = goals ? (left < 0 ? `${label} over` : `${label} left`) : label;
         return (
           <View
             key={key}
-            style={[styles.tile, shadows.sm, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            style={styles.item}
             accessible
             accessibilityLabel={goals ? `${label}: ${formatNumber(eaten)} of ${formatNumber(goal)} grams, ${headline} ${left < 0 ? 'over' : 'left'}` : `${label} ${headline} of today's calories`}
           >
-            <ThemedText variant="headline" style={styles.tabular}>
-              {headline}
-            </ThemedText>
+            <Ring progress={progress} size={76} stroke={7} color={colors[key]} trackColor={colors.backgroundSecondary}>
+              <ThemedText variant="subheadEmphasized" style={styles.tabular}>
+                {headline}
+              </ThemedText>
+            </Ring>
             <ThemedText variant="caption1" color="secondary">
               {caption}
             </ThemedText>
-            <View style={styles.ring}>
-              <Ring progress={progress} size={44} stroke={5} color={colors[key]} trackColor={colors.backgroundSecondary}>
-                <View style={[styles.dot, { backgroundColor: colors[key] }]} />
-              </Ring>
-            </View>
           </View>
         );
       })}
@@ -61,9 +58,7 @@ export function MacroRings({ totals, goals }: MacroRingsProps) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: Spacing.sm },
-  tile: { flex: 1, borderRadius: Radii.lg, borderWidth: StyleSheet.hairlineWidth, padding: Spacing.md, alignItems: 'center', gap: 2 },
-  ring: { marginTop: Spacing.sm },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  row: { flexDirection: 'row', justifyContent: 'space-evenly', paddingTop: Spacing.sm },
+  item: { alignItems: 'center', gap: Spacing.xs },
   tabular: { fontVariant: ['tabular-nums'] },
 });

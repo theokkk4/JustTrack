@@ -55,7 +55,7 @@ function RootNavigator() {
   return (
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={isDark || lightStatusBar ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+      <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', animationDuration: 260, contentStyle: { backgroundColor: colors.background } }}>
         <Stack.Protected guard={welcomed}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="food" options={{ presentation: 'modal' }} />

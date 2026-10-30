@@ -12,6 +12,7 @@ export default function FoodFlowLayout() {
       <Stack.Screen name="search" options={{ headerShown: true, title: 'Add Food' }} />
       <Stack.Screen name="[id]" options={{ headerShown: false }} />
       <Stack.Screen name="build" options={{ headerShown: true, title: 'Build your order' }} />
+      <Stack.Screen name="chain" options={{ headerShown: true, title: '' }} />
     </Stack>
   );
 }

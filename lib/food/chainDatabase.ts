@@ -1,4 +1,5 @@
 import type { FoodDetail } from '@/types';
+import { MANUAL_ROWS } from './manualChains';
 import { rankEntries, scoreEntry, toSearchEntry, tokenize, type SearchEntry } from './search';
 
 /**
@@ -24,6 +25,7 @@ function load(): Indexed[] {
   if (!index) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const data = require('@/assets/data/chain-foods.json') as { rows: ChainRow[] };
+    data.rows = [...data.rows, ...MANUAL_ROWS];
     index = data.rows.map((row) => ({ row, entry: toSearchEntry(row[2]), chainWords: tokenize(row[1]) }));
     byId = new Map(data.rows.map((row) => [row[0], row]));
     chains = [...new Set(data.rows.map((row) => row[1]))];
@@ -50,6 +52,17 @@ const ALIASES: Record<string, string[]> = {
   'Taco Bell': ['tacobell'],
   'Pizza Hut': ['pizzahut'],
   'Panda Express': ['panda'],
+  "Arby's": ['arbys', 'arby'],
+  'Little Caesars': ['caesars', 'caesar', 'littlecaesars'],
+  "Papa John's": ['papajohns', 'papa', 'johns'],
+  Jamba: ['jambajuice'],
+  'Insomnia Cookies': ['insomnia'],
+  Freshens: ['freshen'],
+  "Hangry Joe's": ['hangry', 'hangryjoes'],
+  '7 Brew': ['7brew', 'sevenbrew', 'brew'],
+  '7-Eleven': ['7eleven', '711', 'seveneleven'],
+  "Applebee's": ['applebees', 'applebee'],
+  "Auntie Anne's": ['auntie', 'annes', 'auntieannes'],
 };
 
 export function chainNames(): string[] {

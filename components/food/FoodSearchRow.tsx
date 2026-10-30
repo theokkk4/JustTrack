@@ -15,13 +15,15 @@ interface FoodSearchRowProps {
   onPress: () => void;
   /** Other results share this name; show the macros so the user can tell them apart. */
   disambiguate?: boolean;
+  /** On a chain's own menu page the brand is a given. */
+  hideBrand?: boolean;
 }
 
-export function FoodSearchRow({ food, onPress, disambiguate = false }: FoodSearchRowProps) {
+export function FoodSearchRow({ food, onPress, disambiguate = false, hideBrand = false }: FoodSearchRowProps) {
   const { colors } = useAppTheme();
   const serving = defaultServing(food);
   const macros = `P ${formatNumber(serving.protein)} · C ${formatNumber(serving.carbs)} · F ${formatNumber(serving.fat)} g`;
-  const detail = [food.brand, food.detail, disambiguate ? macros : null, serving.description].filter(Boolean).join(' · ');
+  const detail = [hideBrand ? null : food.brand, food.detail, disambiguate ? macros : null, serving.description].filter(Boolean).join(' · ');
   const calories = `${formatNumber(serving.calories)} cal`;
 
   return (

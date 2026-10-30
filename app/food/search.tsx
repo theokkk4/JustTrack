@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, SectionList, StyleSheet, View } from 'rea
 
 import { FoodDataAttribution } from '@/components/food/FoodDataAttribution';
 import { FoodSearchRow } from '@/components/food/FoodSearchRow';
+import { RestaurantGrid } from '@/components/food/RestaurantGrid';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CloseButton } from '@/components/ui/CloseButton';
@@ -125,10 +126,20 @@ export default function FoodSearchScreen() {
         onEndReached={() => void search.loadMore()}
         onEndReachedThreshold={0.6}
         ListEmptyComponent={
-          <View>
-            <EmptyState icon="search" title="Search for a food" message="Try “chicken breast”, “banana”, a chain like “Chipotle”, or a brand like “Chobani”." />
-            <FoodDataAttribution style={styles.attribution} />
-          </View>
+          search.active ? (
+            <View>
+              <EmptyState icon="search" title="Nothing yet" message="Try a simpler word, a chain like “Chipotle”, or a brand like “Chobani”." />
+              <FoodDataAttribution style={styles.attribution} />
+            </View>
+          ) : (
+            <View>
+              <ThemedText variant="footnote" color="secondary" style={styles.browseTitle}>
+                RESTAURANTS
+              </ThemedText>
+              <RestaurantGrid onSelect={(chain) => router.push({ pathname: '/food/chain', params: { chain, mealType, ...(pickRowId ? { pick: pickRowId } : {}) } })} />
+              <FoodDataAttribution style={styles.attribution} />
+            </View>
+          )
         }
         ListFooterComponent={search.active ? <FoodDataAttribution style={styles.attribution} /> : null}
         contentContainerStyle={styles.list}
@@ -162,6 +173,7 @@ const styles = StyleSheet.create({
   list: { flexGrow: 1, paddingBottom: Spacing['3xl'] },
   sectionHeader: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.xs },
   sectionTitle: { letterSpacing: 0.5 },
+  browseTitle: { letterSpacing: 0.5, paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
   builder: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.sm, padding: Spacing.lg, borderRadius: Radii.xl },
   builderText: { flex: 1, gap: 2 },
   inline: { marginVertical: Spacing.lg },

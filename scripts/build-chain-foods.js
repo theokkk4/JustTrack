@@ -42,6 +42,18 @@ const CHAINS = [
   ['Wingstop', ['wingstop']],
   ['KFC', ['kfc', 'kentucky fried chicken']],
   ["Jersey Mike's", ["jersey mike's", 'jersey mikes']],
+  ["Arby's", ["arby's", 'arbys']],
+  ['Little Caesars', ['little caesars', "little caesar's"]],
+  ["Papa John's", ["papa john's", 'papa johns']],
+  ['Jamba', ['jamba juice', 'jamba']],
+  ['Insomnia Cookies', ['insomnia cookies']],
+  ['Freshens', ['freshens']],
+  ["Hangry Joe's", ["hangry joe's", 'hangry joes']],
+  ['Wawa', ['wawa']],
+  ['7 Brew', ['seven brew', '7 brew']],
+  ['7-Eleven', ['7-eleven', '7 eleven', '7-select']],
+  ["Applebee's", ["applebee's", 'applebees']],
+  ["Auntie Anne's", ["auntie anne's pretzels", "auntie anne's"]],
 ];
 const MAX_PAGES = 60;
 const OUT = path.join(__dirname, '..', 'assets', 'data', 'chain-foods.json');

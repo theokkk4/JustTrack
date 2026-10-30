@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { MacroShareRow } from '@/components/home/MacroShareRow';
 import { GradientHeader } from '@/components/layout/GradientHeader';
@@ -54,7 +54,9 @@ export default function TodayScreen() {
         <Card style={styles.card}>
           <View style={styles.cardHeader}>
             <ThemedText variant="headline">Balance</ThemedText>
-            <AppIcon name="info" size={16} color={colors.textTertiary} />
+            <Pressable onPress={() => Alert.alert('Balance', 'How close your calorie split is to the standard ranges: protein 10–35%, carbs 45–65%, fat 20–35%. A rough guide, not advice.')} accessibilityRole="button" accessibilityLabel="What is balance?" hitSlop={10}>
+              <AppIcon name="info" size={16} color={colors.textTertiary} />
+            </Pressable>
           </View>
           {balance ? (
             <>
@@ -75,9 +77,6 @@ export default function TodayScreen() {
               Log at least {formatNumber(MIN_CALORIES_FOR_SCORE)} kcal to see how balanced the day is.
             </ThemedText>
           )}
-          <ThemedText variant="caption1" color="tertiary">
-            How close your calorie split is to the standard ranges (protein 10–35%, carbs 45–65%, fat 20–35%). A rough guide, not advice.
-          </ThemedText>
         </Card>
 
         <Card style={styles.card}>

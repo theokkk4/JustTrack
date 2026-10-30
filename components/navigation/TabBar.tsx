@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import type { TabTriggerSlotProps } from 'expo-router/ui';
 import React from 'react';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon, type AppIconName } from '@/components/ui/AppIcon';
@@ -36,6 +37,11 @@ interface TabBarButtonProps extends TabTriggerSlotProps {
 
 export function TabBarButton({ icon, activeIcon, label, isFocused, onPress, style, ref, ...rest }: TabBarButtonProps) {
   const { colors } = useAppTheme();
+  const focus = useSharedValue(isFocused ? 1 : 0);
+  React.useEffect(() => {
+    focus.set(withSpring(isFocused ? 1 : 0, { damping: 14, stiffness: 220 }));
+  }, [focus, isFocused]);
+  const circle = useAnimatedStyle(() => ({ transform: [{ scale: 0.82 + focus.get() * 0.18 }], opacity: 0.4 + focus.get() * 0.6 }));
 
   return (
     <Pressable
@@ -51,9 +57,9 @@ export function TabBarButton({ icon, activeIcon, label, isFocused, onPress, styl
       // TabTrigger injects a row layout; ours must come last to win.
       style={(state) => [typeof style === 'function' ? style(state) : style, styles.tab]}
     >
-      <View style={[styles.circle, isFocused && { backgroundColor: colors.fab }]}>
+      <Animated.View style={[styles.circle, isFocused && { backgroundColor: colors.fab }, circle]}>
         <AppIcon name={isFocused && activeIcon ? activeIcon : icon} size={22} color={isFocused ? colors.fabIcon : colors.tabIconDefault} />
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }

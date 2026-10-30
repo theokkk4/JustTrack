@@ -1,0 +1,46 @@
+import { Image } from 'expo-image';
+import React from 'react';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+
+import { ThemedText } from '@/components/ui/ThemedText';
+import { chainLogo } from '@/lib/food/chainLogos';
+import { heroTintFor } from '@/lib/food/heroTint';
+
+interface ChainLogoProps {
+  chain: string;
+  size?: number;
+  radius?: number;
+  style?: StyleProp<ViewStyle>;
+}
+
+/** A chain's logo on a white tile; a tinted monogram when we don't have the logo. */
+export function ChainLogo({ chain, size = 44, radius = 12, style }: ChainLogoProps) {
+  const source = chainLogo(chain);
+  const box = { width: size, height: size, borderRadius: radius };
+  if (source) {
+    return (
+      <View style={[box, styles.tile, style]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Image source={source} style={{ width: size, height: size }} contentFit="cover" transition={120} accessibilityIgnoresInvertColors />
+      </View>
+    );
+  }
+  const initials = chain
+    .split(/\s+/)
+    .map((word) => word.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  const [start] = heroTintFor(chain);
+  return (
+    <View style={[box, styles.mono, { backgroundColor: start }, style]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <ThemedText variant={size >= 56 ? 'title3' : 'subheadEmphasized'} style={{ color: '#FFFFFF' }}>
+        {initials}
+      </ThemedText>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  tile: { backgroundColor: '#FFFFFF', overflow: 'hidden' },
+  mono: { alignItems: 'center', justifyContent: 'center' },
+});

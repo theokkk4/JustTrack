@@ -4,6 +4,8 @@ import React from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { ImageStyle } from 'expo-image';
 
+import { ChainLogo } from '@/components/food/ChainLogo';
+import { chainLogo } from '@/lib/food/chainLogos';
 import { foodEmojiFor } from '@/lib/food/foodEmoji';
 import { heroTintFor } from '@/lib/food/heroTint';
 
@@ -24,6 +26,9 @@ export function FoodThumb({ name, hints = [], imageUri, size = 44, radius = 12, 
   if (imageUri) {
     return <Image source={{ uri: imageUri }} style={[box, styles.image, style]} contentFit="cover" transition={150} accessibilityIgnoresInvertColors />;
   }
+  // A chain's item wears the chain's logo, so a Chipotle bowl looks like one at a glance.
+  const chain = hints.find((hint): hint is string => typeof hint === 'string' && chainLogo(hint) !== null);
+  if (chain) return <ChainLogo chain={chain} size={size} radius={radius} style={style} />;
   const [start, end] = heroTintFor(...hints, name);
   return (
     <LinearGradient colors={[start, end]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[box, styles.tile, style]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">

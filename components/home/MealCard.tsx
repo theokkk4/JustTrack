@@ -42,7 +42,7 @@ export function MealCard({ section, onAdd }: MealCardProps) {
   ];
 
   return (
-    <View style={[styles.card, shadows.sm, { backgroundColor: colors.surfaceTint, borderColor: colors.border }]}>
+    <View style={[styles.card, { backgroundColor: colors.surfaceTint }]}>
       <View style={[styles.top, onCover && styles.topCover]}>
         {cover ? (
           <>
@@ -75,18 +75,9 @@ export function MealCard({ section, onAdd }: MealCardProps) {
         </View>
 
         {hasEntries ? (
-          <View style={styles.pills} accessible accessibilityLabel={pills.map((pill) => `${pill.label} ${Math.round(pill.value * 100)} percent`).join(', ')}>
-            {pills.map((pill) => (
-              <View key={pill.label} style={[styles.pill, { backgroundColor: onCover ? 'rgba(255,255,255,0.22)' : colors.surface }]}>
-                <ThemedText variant="caption2" style={{ color: mutedColor }}>
-                  {pill.label}
-                </ThemedText>
-                <ThemedText variant="caption2" style={[styles.tabular, { color: textColor }]}>
-                  {Math.round(pill.value * 100)}%
-                </ThemedText>
-              </View>
-            ))}
-          </View>
+          <ThemedText variant="caption1" style={[styles.macroLine, styles.tabular, { color: mutedColor }]} accessibilityLabel={pills.map((pill) => `${pill.label} ${Math.round(pill.value * 100)} percent`).join(', ')}>
+            {pills.map((pill) => `${pill.label.charAt(0)} ${Math.round(pill.value * 100)}%`).join('   ·   ')}
+          </ThemedText>
         ) : null}
       </View>
 
@@ -110,14 +101,13 @@ export function MealCard({ section, onAdd }: MealCardProps) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: Radii.xl, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  card: { borderRadius: Radii['2xl'], overflow: 'hidden' },
   top: { overflow: 'hidden' },
   topCover: { minHeight: 132, justifyContent: 'flex-end' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md, padding: Spacing.lg, paddingBottom: Spacing.md },
   titleBlock: { flex: 1, gap: 2 },
   addButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  pills: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg },
-  pill: { flexDirection: 'row', gap: Spacing.xs, paddingHorizontal: Spacing.sm + 2, paddingVertical: Spacing.xs, borderRadius: Radii.full },
+  macroLine: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg, letterSpacing: 0.2 },
   entries: { borderTopWidth: StyleSheet.hairlineWidth },
   tabular: { fontVariant: ['tabular-nums'] },
 });

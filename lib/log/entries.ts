@@ -32,7 +32,8 @@ export function entryFromFood(food: FoodDetail, portion: StoredPortion, mealType
     servings: round(portion.servings, 4),
     amountUnit: portion.amountUnit,
     grams: round((serving.metricAmount ?? 0) * portion.servings, 1),
-    isEstimate: false,
+    // Hand-estimated menu rows say so in their serving label (see lib/food/manualChains.ts).
+    isEstimate: /estimate/i.test(serving.description),
     imageUri: food.imageUrl ?? null,
     ...nutrition,
   };

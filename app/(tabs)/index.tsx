@@ -1,12 +1,14 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { CaloriesLeft } from '@/components/home/CaloriesLeft';
 import { MacroRings } from '@/components/home/MacroRings';
 import { MealCard } from '@/components/home/MealCard';
 import { WeekStrip } from '@/components/home/WeekStrip';
 import { GradientHeader } from '@/components/layout/GradientHeader';
+import { Tap } from '@/components/ui/Tap';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { PRIVACY_LINE } from '@/constants/brand';
 import { Spacing } from '@/constants/theme';
@@ -43,17 +45,19 @@ export default function HomeScreen() {
               {isToday ? 'Stay on track today' : day.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </ThemedText>
           </View>
-          <Pressable onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel={settings.displayName ? `${settings.displayName}, profile` : 'Profile'} style={[styles.avatar, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
+          <Tap onPress={() => router.push('/profile')} pressScale={0.9} accessibilityRole="button" accessibilityLabel={settings.displayName ? `${settings.displayName}, profile` : 'Profile'} style={[styles.avatar, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
             <ThemedText variant="subheadEmphasized" style={{ color: colors.onGradient }}>
               {initialFor(settings.displayName)}
             </ThemedText>
-          </Pressable>
+          </Tap>
         </View>
         <WeekStrip today={today} selected={day} onSelect={setPicked} />
-        <CaloriesLeft eaten={totals.calories} goal={settings.calorieGoal} />
-        <View style={styles.rings}>
-          <MacroRings totals={totals} goals={settings.macroGoals} />
-        </View>
+        <Animated.View key={day.toDateString()} entering={FadeIn.duration(350)}>
+          <CaloriesLeft eaten={totals.calories} goal={settings.calorieGoal} />
+          <View style={styles.rings}>
+            <MacroRings totals={totals} goals={settings.macroGoals} />
+          </View>
+        </Animated.View>
       </GradientHeader>
 
       <View style={styles.body}>
@@ -62,17 +66,19 @@ export default function HomeScreen() {
             Daily meals
           </ThemedText>
           {!isToday ? (
-            <Pressable onPress={() => setPicked(null)} accessibilityRole="button" hitSlop={8} style={[styles.todayChip, { backgroundColor: colors.surfaceTint }]}>
+            <Tap onPress={() => setPicked(null)} accessibilityRole="button" hitSlop={8} style={[styles.todayChip, { backgroundColor: colors.surfaceTint }]}>
               <ThemedText variant="footnote" style={{ color: colors.accent, fontWeight: '600' }}>
                 Back to today
               </ThemedText>
-            </Pressable>
+            </Tap>
           ) : null}
         </View>
 
         <View style={styles.cards}>
-          {sections.map((section) => (
-            <MealCard key={section.mealType} section={section} onAdd={() => router.push({ pathname: '/food/search', params: { mealType: section.mealType } })} />
+          {sections.map((section, index) => (
+            <Animated.View key={`${section.mealType}-${day.toDateString()}`} entering={FadeInDown.delay(80 + index * 70).duration(420)}>
+              <MealCard section={section} onAdd={() => router.push({ pathname: '/food/search', params: { mealType: section.mealType } })} />
+            </Animated.View>
           ))}
         </View>
 
@@ -89,7 +95,7 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md },
   greeting: { flex: 1, gap: 2 },
   avatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  rings: { paddingBottom: Spacing.sm },
+  rings: { paddingBottom: Spacing.lg },
   body: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
   cards: { gap: Spacing.md },
