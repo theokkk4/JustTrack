@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { Radii, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { useMealScan } from '@/hooks/useMealScan';
+import { useLightStatusBar } from '@/lib/statusBar';
 
 const VIOLET = '#8B6CFF';
 
@@ -62,6 +63,7 @@ export default function ScanScreen() {
   const [fallback, setFallback] = useState<'denied' | 'no_camera' | 'unsupported' | null>(null);
   const [ready, setReady] = useState(false);
   const capture = useRef<(() => void) | null>(null);
+  useLightStatusBar(!fallback);
 
   useFocusEffect(
     useCallback(() => {

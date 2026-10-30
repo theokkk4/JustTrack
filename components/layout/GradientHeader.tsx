@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { useLightStatusBar } from '@/lib/statusBar';
 
 interface GradientHeaderProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ interface GradientHeaderProps {
 export function GradientHeader({ children, style, fadeEnd = 1 }: GradientHeaderProps) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
+  useLightStatusBar();
 
   return (
     <LinearGradient

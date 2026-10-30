@@ -10,6 +10,7 @@ import { Radii, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { foodEmojiFor } from '@/lib/food/foodEmoji';
 import { heroTintFor } from '@/lib/food/heroTint';
+import { useLightStatusBar } from '@/lib/statusBar';
 
 interface FoodHeroProps {
   title: string;
@@ -33,6 +34,7 @@ export function FoodHero({ title, subtitle, amount, amountCaption, imageUri, tin
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const [tintStart, tintEnd] = heroTintFor(...tintHints, title);
+  useLightStatusBar();
 
   return (
     <View style={styles.hero}>

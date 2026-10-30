@@ -25,8 +25,9 @@ const LABELS = [
 export function MacroShareRow({ totals, goals, onGradient = false }: MacroShareRowProps) {
   const { colors } = useAppTheme();
   const shares = macroShares(totals);
-  const labelColor = onGradient ? colors.onGradientMuted : colors.textSecondary;
-  const valueColor = onGradient ? colors.onGradient : colors.text;
+  // The row sits at the foot of the header, where the gradient has already faded into the page.
+  const labelColor = onGradient ? colors.onGradientFootMuted : colors.textSecondary;
+  const valueColor = onGradient ? colors.onGradientFoot : colors.text;
 
   return (
     <View style={styles.row}>
@@ -35,7 +36,7 @@ export function MacroShareRow({ totals, goals, onGradient = false }: MacroShareR
         return (
           <View
             key={key}
-            style={[styles.cell, index < LABELS.length - 1 && { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: onGradient ? 'rgba(255,255,255,0.25)' : colors.border }]}
+            style={[styles.cell, index < LABELS.length - 1 && { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: onGradient ? 'rgba(90,59,244,0.18)' : colors.border }]}
             accessible
             accessibilityLabel={`${label} ${value}`}
           >

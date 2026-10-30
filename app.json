@@ -40,6 +40,13 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "JustTrack uses the camera to photograph meals and scan barcodes.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "JustTrack uses your photo library when you pick a meal photo to estimate its nutrition.",

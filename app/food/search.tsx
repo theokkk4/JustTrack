@@ -69,7 +69,9 @@ export default function FoodSearchScreen() {
       <Stack.Screen
         options={{
           title: pickRowId ? 'Choose a match' : 'Add Food',
-          headerLeft: () => <HeaderButton label={pickRowId ? 'Back' : 'Cancel'} onPress={() => router.back()} />,
+          headerLeft: pickRowId ? () => <HeaderButton label="Back" onPress={() => router.back()} /> : () => null,
+          headerRight: pickRowId ? undefined : () => <HeaderButton label="Cancel" onPress={() => router.back()} />,
+          headerTitleAlign: 'center',
         }}
       />
 

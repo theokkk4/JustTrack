@@ -25,6 +25,9 @@ export interface ThemeColors {
   /** Text and icons that sit on the gradient header. */
   onGradient: string;
   onGradientMuted: string;
+  /** Text at the foot of the header, where the gradient has faded into the page. */
+  onGradientFoot: string;
+  onGradientFootMuted: string;
   accent: string;
   accentMuted: string;
   protein: string;
@@ -59,6 +62,8 @@ export const Colors: Record<ColorScheme, ThemeColors> = {
     textInverse: '#FFFFFF',
     onGradient: '#FFFFFF',
     onGradientMuted: 'rgba(255,255,255,0.72)',
+    onGradientFoot: '#17142B',
+    onGradientFootMuted: '#6F6B87',
     accent: '#6B4EF2',
     accentMuted: '#EDE9FD',
     protein: '#F0547A',
@@ -90,6 +95,8 @@ export const Colors: Record<ColorScheme, ThemeColors> = {
     textInverse: '#17142B',
     onGradient: '#FFFFFF',
     onGradientMuted: 'rgba(255,255,255,0.7)',
+    onGradientFoot: '#FFFFFF',
+    onGradientFootMuted: 'rgba(255,255,255,0.7)',
     accent: '#9D86FF',
     accentMuted: '#2A2347',
     protein: '#FF6F8E',

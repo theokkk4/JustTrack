@@ -3,6 +3,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaFrameContext, SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { useWantsLightStatusBar } from '@/lib/statusBar';
 import { ThemedText } from '@/components/ui/ThemedText';
 
 /**
@@ -70,25 +71,28 @@ function useClock(): string {
 /** Time on the left, signal / Wi-Fi / battery on the right, drawn over whatever the app shows. */
 function StatusBar() {
   const time = useClock();
+  const { isDark } = useAppTheme();
+  const light = useWantsLightStatusBar() || isDark;
+  const ink = light ? WHITE : '#17142B';
   return (
-    <View pointerEvents="none" style={styles.statusBar} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <ThemedText variant="subheadEmphasized" style={styles.statusText}>
+    <View pointerEvents="none" style={[styles.statusBar, { opacity: 1 }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <ThemedText variant="subheadEmphasized" style={[styles.statusText, { color: ink, textShadowColor: light ? 'rgba(0,0,0,0.35)' : 'transparent' }]}>
         {time}
       </ThemedText>
       <View style={styles.statusIcons}>
         <View style={styles.signal}>
           {[4, 6, 8, 10].map((h) => (
-            <View key={h} style={[styles.bar, { height: h }]} />
+            <View key={h} style={[styles.bar, { height: h, backgroundColor: ink }]} />
           ))}
         </View>
         <View style={styles.wifi}>
           {[16, 10, 4].map((size) => (
-            <View key={size} style={[styles.wifiArc, { width: size, height: size / 2 + 1, borderTopLeftRadius: size / 2, borderTopRightRadius: size / 2 }]} />
+            <View key={size} style={[styles.wifiArc, { backgroundColor: ink, width: size, height: size / 2 + 1, borderTopLeftRadius: size / 2, borderTopRightRadius: size / 2 }]} />
           ))}
         </View>
-        <View style={styles.battery}>
-          <View style={styles.batteryFill} />
-          <View style={styles.batteryCap} />
+        <View style={[styles.battery, { borderColor: ink }]}>
+          <View style={[styles.batteryFill, { backgroundColor: ink }]} />
+          <View style={[styles.batteryCap, { backgroundColor: ink }]} />
         </View>
       </View>
     </View>
@@ -122,15 +126,15 @@ const styles = StyleSheet.create({
   sideButton: { position: 'absolute', width: 4, borderRadius: 2, backgroundColor: '#2A2834' },
   screen: { borderRadius: OUTER_RADIUS - BEZEL, overflow: 'hidden' },
   island: { position: 'absolute', top: 11, left: SCREEN.width / 2 - 62, width: 124, height: 36, borderRadius: 18, backgroundColor: '#000000' },
-  homeIndicator: { position: 'absolute', bottom: 8, left: SCREEN.width / 2 - 70, width: 140, height: 5, borderRadius: 3, backgroundColor: WHITE, opacity: 0.9, mixBlendMode: 'difference' },
+  homeIndicator: { position: 'absolute', bottom: 8, left: SCREEN.width / 2 - 70, width: 140, height: 5, borderRadius: 3, backgroundColor: '#8A879C', opacity: 0.8 },
   statusBar: { position: 'absolute', top: 14, left: 0, right: 0, height: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 38, paddingRight: 30 },
   statusText: { color: WHITE, textShadowColor: 'rgba(0,0,0,0.45)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } },
   statusIcons: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   signal: { flexDirection: 'row', alignItems: 'flex-end', gap: 1.5, height: 10 },
-  bar: { width: 3, borderRadius: 1, backgroundColor: WHITE, boxShadow: '0 1px 3px rgba(0,0,0,0.45)' },
+  bar: { width: 3, borderRadius: 1 },
   wifi: { width: 16, height: 10, alignItems: 'center', justifyContent: 'flex-end' },
-  wifiArc: { position: 'absolute', bottom: 0, backgroundColor: WHITE, boxShadow: '0 1px 3px rgba(0,0,0,0.35)' },
-  battery: { width: 25, height: 12, borderRadius: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)', padding: 1.5, boxShadow: '0 1px 3px rgba(0,0,0,0.35)' },
-  batteryFill: { flex: 1, borderRadius: 2, backgroundColor: WHITE },
-  batteryCap: { position: 'absolute', right: -3, top: 3, width: 2, height: 4, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.6)' },
+  wifiArc: { position: 'absolute', bottom: 0 },
+  battery: { width: 25, height: 12, borderRadius: 4, borderWidth: 1, padding: 1.5, opacity: 0.9 },
+  batteryFill: { flex: 1, borderRadius: 2 },
+  batteryCap: { position: 'absolute', right: -3, top: 3, width: 2, height: 4, borderRadius: 1 },
 });

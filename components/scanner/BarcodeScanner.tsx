@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 export interface BarcodeScannerProps {
   onDetected: (code: string) => void;
@@ -6,12 +8,45 @@ export interface BarcodeScannerProps {
 }
 
 /**
- * Native placeholder: the iOS build gets a camera scanner with expo-camera.
- * (The web build has a working scanner in BarcodeScanner.web.tsx.)
+ * Native: reads product barcodes with expo-camera. Permission is requested
+ * when the screen opens, which is when the user asked to scan. (The web
+ * build decodes the browser camera with ZXing — see BarcodeScanner.web.tsx.)
  */
-export function BarcodeScanner({ onError }: BarcodeScannerProps) {
+export function BarcodeScanner({ onDetected, onError }: BarcodeScannerProps) {
+  const [permission, requestPermission] = useCameraPermissions();
+  const done = useRef(false);
+
   useEffect(() => {
-    onError('Barcode scanning isn’t in this build yet. Search by name instead.');
-  }, [onError]);
-  return null;
+    if (!permission || permission.granted) return;
+    if (!permission.canAskAgain) {
+      onError('Camera access is off for JustTrack. Allow it in Settings, or search by name instead.');
+      return;
+    }
+    requestPermission().then((result) => {
+      if (!result.granted) onError('Camera access was declined. Allow it in Settings, or search by name instead.');
+    });
+  }, [permission, requestPermission, onError]);
+
+  if (!permission?.granted) return <View style={styles.container} />;
+
+  return (
+    <View style={styles.container}>
+      <CameraView
+        style={StyleSheet.absoluteFill}
+        facing="back"
+        mute
+        barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
+        onBarcodeScanned={(result) => {
+          if (done.current || !result.data) return;
+          done.current = true;
+          onDetected(result.data);
+        }}
+        onMountError={() => onError('The camera couldn’t be started.')}
+      />
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000000', overflow: 'hidden' },
+});

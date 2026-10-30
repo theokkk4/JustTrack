@@ -12,6 +12,7 @@ import { Radii, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { rememberFoods } from '@/lib/food/foodStore';
 import { getOpenFoodFactsProduct } from '@/lib/food/openFoodFacts';
+import { useLightStatusBar } from '@/lib/statusBar';
 import { getErrorMessage } from '@/utils/errors';
 
 type Status = { kind: 'scanning' } | { kind: 'looking_up'; code: string } | { kind: 'not_found'; code: string } | { kind: 'error'; message: string };
@@ -22,6 +23,7 @@ export default function BarcodeScreen() {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const [status, setStatus] = useState<Status>({ kind: 'scanning' });
+  useLightStatusBar();
 
   const onDetected = useCallback(
     async (code: string) => {

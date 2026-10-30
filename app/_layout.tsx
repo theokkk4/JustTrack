@@ -11,6 +11,7 @@ import { StoreGate } from '@/components/StoreGate';
 import { ActionSheetHost } from '@/components/ui/ActionSheetHost';
 import { ThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
 import { useSettings } from '@/hooks/useSettings';
+import { useWantsLightStatusBar } from '@/lib/statusBar';
 
 export { AppErrorBoundary as ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -37,6 +38,7 @@ export default function RootLayout() {
 function RootNavigator() {
   const { isDark, colors } = useAppTheme();
   const { welcomed } = useSettings();
+  const lightStatusBar = useWantsLightStatusBar();
 
   useEffect(() => {
     SplashScreen.hideAsync();
@@ -52,7 +54,7 @@ function RootNavigator() {
 
   return (
     <NavigationThemeProvider value={navigationTheme}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <StatusBar style={isDark || lightStatusBar ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
         <Stack.Protected guard={welcomed}>
           <Stack.Screen name="(tabs)" />
