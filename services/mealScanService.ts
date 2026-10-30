@@ -1,25 +1,24 @@
 import { parseMealAnalysis } from '@/lib/scan/analysis';
+import { ScanError } from '@/lib/scan/errors';
+import { analyzeWithGemini, directApiKey } from '@/lib/scan/geminiDirect';
 import type { MealAnalysis } from '@/types';
 
+export { ScanError };
+
 /**
- * Talks to the app's own /api/analyze-meal function (hosted alongside the
- * web app), which holds the AI key. The app never calls the model directly.
+ * Two ways to the model, same result either way:
+ * - A build made with EXPO_PUBLIC_GEMINI_API_KEY (TestFlight, personal builds)
+ *   asks Gemini directly from the device.
+ * - Otherwise the app calls its own /api/analyze-meal function (hosted with
+ *   the web app), which holds the key server-side.
  */
 
 /** Empty on the web, where the API shares the app's origin; set for native builds. */
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
 
-export class ScanError extends Error {
-  constructor(
-    readonly code: string,
-    message: string
-  ) {
-    super(message);
-    this.name = 'ScanError';
-  }
-}
+const UNREADABLE = 'The photo scanner sent back something we couldn’t read. Please try again.';
 
-export async function analyzeMealPhoto(image: { base64: string; mediaType: string }, signal?: AbortSignal): Promise<MealAnalysis> {
+async function analyzeViaServer(image: { base64: string; mediaType: string }, signal?: AbortSignal): Promise<unknown> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}/api/analyze-meal`, {
@@ -39,8 +38,13 @@ export async function analyzeMealPhoto(image: { base64: string; mediaType: strin
     const message = typeof error?.message === 'string' ? error.message : 'The photo scanner had a problem. Please try again.';
     throw new ScanError(code, message);
   }
+  return body;
+}
 
-  const analysis = parseMealAnalysis(body);
-  if (!analysis) throw new ScanError('bad_response', 'The photo scanner sent back something we couldn’t read. Please try again.');
+export async function analyzeMealPhoto(image: { base64: string; mediaType: string }, signal?: AbortSignal): Promise<MealAnalysis> {
+  const apiKey = directApiKey();
+  const raw = apiKey ? await analyzeWithGemini(image, apiKey, signal) : await analyzeViaServer(image, signal);
+  const analysis = parseMealAnalysis(raw);
+  if (!analysis) throw new ScanError('bad_response', UNREADABLE);
   return analysis;
 }

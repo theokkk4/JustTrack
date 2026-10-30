@@ -50,9 +50,27 @@ The web app and its two functions deploy together from this repository.
 
 The key never ships in the app: `api/analyze-meal.ts` is the only code that sees it. Photos are sent to Gemini for analysis with storage turned off and are not kept. Note that on Google's free tier, requests may be used to improve their products; a paid key avoids that. The function rate-limits per address; for a public launch, add Vercel's firewall rate limiting as well.
 
-## iOS
+## iOS (TestFlight)
 
-The same code builds as a native iOS app with EAS (`eas build --platform ios`). A native build needs `EXPO_PUBLIC_API_BASE_URL` set to the deployed web URL so it can reach the functions; the barcode scanner on iOS is still to come (the web scanner uses the browser camera).
+The same code builds as a native iOS app with EAS. The project is linked to `@theoo1k/justtrack` on expo.dev (`extra.eas.projectId` in `app.json`).
+
+**Scanner key.** A native build can carry its own Gemini key and ask the model directly from the phone, so it works even when the Vercel function has no key. The key lives on EAS as an environment variable, not in the repo:
+
+```bash
+npx eas-cli@latest env:set --name EXPO_PUBLIC_GEMINI_API_KEY --value <key> --environment production --visibility sensitive --scope project
+```
+
+Anyone who unpacks the app can read a key shipped this way, so keep such builds to TestFlight and people you trust; the public web app keeps using `/api/analyze-meal`, where the key stays server-side. Without the variable, native builds call the server function instead (they need `EXPO_PUBLIC_API_BASE_URL`, already set in `eas.json`).
+
+**First build (interactive, once).** Apple sign-in can't happen in CI, so the first iOS build runs on your own machine so EAS can create the distribution certificate and provisioning profile:
+
+```bash
+npx eas-cli@latest build --platform ios --profile production
+```
+
+After that, `eas build --platform ios --profile production --non-interactive` works from anywhere, including this repo's cloud sessions. Submit to TestFlight with `npx eas-cli@latest submit --platform ios --latest` (first run asks for App Store Connect access and creates the app record).
+
+The barcode scanner on iOS is still to come (the web scanner uses the browser camera).
 
 ## Privacy
 

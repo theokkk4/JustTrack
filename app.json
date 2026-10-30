@@ -23,7 +23,11 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "single",
@@ -58,6 +62,13 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "description": "Free calorie tracking for Philly college students. No account, no ads, and your data stays on your phone."
+    "description": "Free calorie tracking for Philly college students. No account, no ads, and your data stays on your phone.",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "43a23b4a-3aed-4a90-bf08-17f6f83516ee"
+      }
+    },
+    "owner": "theoo1k"
   }
 }

@@ -1,47 +1,42 @@
 import { ApiError, GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
 
-import { DEFAULT_MODEL, readApiKey } from './_shared/apiKey';
+import { DEFAULT_GEMINI_MODEL, RESPONSE_SCHEMA, SCAN_QUESTION, SYSTEM_PROMPT } from '../lib/scan/geminiPrompt';
+import { readApiKey } from './_shared/apiKey';
 
 /**
- * POST /api/analyze-meal — the only server-side code in JustTrack.
+ * POST /api/analyze-meal — the server side of the photo scanner.
  *
  * Takes a photo, asks Gemini what food is on the plate and roughly how much,
  * and returns per-item nutrition estimates for the user to review. Runs as a
- * Vercel function so the API key never ships inside the app. The photo is
- * sent to the model with storage turned off and is not kept anywhere.
+ * Vercel function so the web app never sees the API key. (A native build made
+ * with EXPO_PUBLIC_GEMINI_API_KEY skips this and asks Gemini directly; see
+ * lib/scan/geminiDirect.ts.) The photo is sent with storage turned off and is
+ * not kept anywhere.
  */
 
-const MODEL = process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
+const MODEL = process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
 /** Base64 is 4/3 of the bytes: this is about a 2 MB image. The app sends ~300 KB. */
 const MAX_IMAGE_CHARS = 2_800_000;
 const MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
+/** Validates the model's reply; the schema sent to Gemini lives in lib/scan/geminiPrompt.ts. */
 const EstimatedFoodSchema = z.object({
-  name: z.string().describe('Short, specific name as a person would say it, e.g. "Grilled chicken breast".'),
-  portionDescription: z.string().describe('Plain-language portion, e.g. "about 1 cup" or "one slice".'),
-  estimatedGrams: z.number().describe('Estimated weight of this portion in grams.'),
-  confidence: z.number().describe('0 to 1: how sure you are this food is what you think it is.'),
-  chain: z.string().describe('The restaurant chain, exactly as listed in the instructions, when its branding, packaging, or a signature item is visible. Empty string otherwise.'),
-  calories: z.number().describe('Calories in this portion.'),
-  protein: z.number().describe('Grams of protein in this portion.'),
-  carbs: z.number().describe('Grams of carbohydrate in this portion.'),
-  fat: z.number().describe('Grams of fat in this portion.'),
+  name: z.string(),
+  portionDescription: z.string(),
+  estimatedGrams: z.number(),
+  confidence: z.number(),
+  chain: z.string(),
+  calories: z.number(),
+  protein: z.number(),
+  carbs: z.number(),
+  fat: z.number(),
 });
 
 const MealAnalysisSchema = z.object({
-  foods: z.array(EstimatedFoodSchema).max(12).describe('Each distinct food visible, largest first. Empty if there is no food.'),
-  note: z.string().describe('One short sentence the user should know, e.g. part of the plate is hidden. Empty string if nothing.'),
+  foods: z.array(EstimatedFoodSchema).max(12),
+  note: z.string(),
 });
-
-/** Gemini takes standard JSON Schema; the `$schema` marker is the one key it doesn't want. */
-const { $schema: _ignored, ...RESPONSE_SCHEMA } = z.toJSONSchema(MealAnalysisSchema);
-
-const SYSTEM_PROMPT = `You identify food in a photo for a calorie-tracking app used by college students.
-
-List each distinct food you can actually see, largest portion first. For each, estimate the portion size as it appears (use plate, cutlery, and packaging for scale) and give nutrition for that portion using standard nutrition-database values for the most likely preparation. Combine components into the dish people would log ("Chicken burrito bowl") unless parts are clearly separate on the plate. Don't list foods that are hidden or merely plausible. If there's no food, return an empty list and say so in the note. Keep names short and specific.
-
-Fast food: if a cup, wrapper, bag, box, or signature item shows which chain it's from, set "chain" to that chain and name the item the way its menu does (e.g. "Spicy Deluxe Sandwich", "Chicken Burrito Bowl", "Medium French Fries", "Grande Caramel Macchiato"), including size when visible. Chains to use exactly: McDonald's, Starbucks, Chick-fil-A, Taco Bell, Dunkin', Wendy's, Chipotle Mexican Grill, Burger King, Domino's, Subway, Panda Express, Panera Bread, Popeyes, Raising Cane's, Sonic Drive-In, Pizza Hut, Dairy Queen, Wingstop, KFC, Jersey Mike's. Don't guess a chain from the food alone.`;
 
 /** Best-effort per-IP limiter; each serverless instance keeps its own counts. */
 const recent = new Map<string, number[]>();
@@ -94,7 +89,7 @@ export async function POST(request: Request): Promise<Response> {
       system_instruction: SYSTEM_PROMPT,
       input: [
         { type: 'image', data: image, mime_type: mediaType },
-        { type: 'text', text: 'What food is in this photo, and roughly how much of each?' },
+        { type: 'text', text: SCAN_QUESTION },
       ],
       response_format: { type: 'text', mime_type: 'application/json', schema: RESPONSE_SCHEMA },
       store: false,

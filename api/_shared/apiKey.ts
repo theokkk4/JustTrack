@@ -9,4 +9,4 @@ export function readApiKey(): string | null {
   return null;
 }
 
-export const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
+export { DEFAULT_GEMINI_MODEL as DEFAULT_MODEL } from '../../lib/scan/geminiPrompt';
