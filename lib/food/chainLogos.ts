@@ -37,6 +37,8 @@ const LOGOS: Record<string, ImageSourcePropType> = {
   "Auntie Anne's": require('@/assets/logos/auntie-annes.png'),
   "Applebee's": require('@/assets/logos/applebees.png'),
   '7-Eleven': require('@/assets/logos/7-eleven.png'),
+  Wawa: require('@/assets/logos/wawa.png'),
+  '7 Brew': require('@/assets/logos/7-brew.png'),
 };
 
 /** Browse order: the biggest chains first, campus favourites last. */
