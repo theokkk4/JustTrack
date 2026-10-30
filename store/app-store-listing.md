@@ -7,7 +7,7 @@ Everything to fill in at appstoreconnect.apple.com. Copy the text as is; charact
 | File | Use in App Store Connect |
 | --- | --- |
 | `icon-1024.png` | Not uploaded separately: the icon comes from the build (`assets/justtrack.icon` + `assets/images/icon.png`). Keep it here for the listing preview and press use. |
-| `screenshots/iphone-6.9/01…07.png` | App Store → iOS App → Screenshots → **iPhone 6.9" Display** (1320 × 2868). Upload in numbered order. Apple scales this one set for every other iPhone size. |
+| `screenshots/iphone-6.9/01…07.png` | App Store → iOS App → Screenshots → **iPhone 6.9" Display** (1320 × 2868). Upload in numbered order (the first one makes the free, open-source pitch). Apple scales this one set for every other iPhone size. |
 
 ## App Information
 
@@ -30,7 +30,7 @@ Everything to fill in at appstoreconnect.apple.com. Copy the text as is; charact
 **Promotional text (170)**
 
 ```
-The free, open-source calorie tracker. No account, no ads, no subscription. Snap a photo, pick from 20 fast-food menus, or build your Chipotle bowl. Data stays on your phone.
+Free and open source. No account, no ads, no subscription. Snap a photo, pick from 20 fast-food menus, or build your Chipotle bowl. Your data stays on your phone.
 ```
 
 **Description (4000)**
