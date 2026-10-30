@@ -11,6 +11,7 @@ export default function FoodFlowLayout() {
     <Stack screenOptions={{ headerShadowVisible: false, headerTintColor: colors.text, headerStyle: { backgroundColor: colors.background }, contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen name="search" options={{ headerShown: true, title: 'Add Food' }} />
       <Stack.Screen name="[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="build" options={{ headerShown: true, title: 'Build your order' }} />
     </Stack>
   );
 }

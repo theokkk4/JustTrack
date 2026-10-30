@@ -132,6 +132,11 @@ function lenientRank(words: string[], pool: readonly Indexed[], limit: number): 
   return scored.slice(0, limit).map((entry) => entry.item);
 }
 
+/** Every menu row for a chain, in data order. */
+export function chainRows(chain: string): ChainRow[] {
+  return load().filter((item) => item.row[1] === chain).map((item) => item.row);
+}
+
 export function getChainFood(id: string): FoodDetail | null {
   load();
   const row = byId?.get(id);

@@ -4,16 +4,18 @@ import { ActivityIndicator, Pressable, SectionList, StyleSheet, View } from 'rea
 
 import { FoodDataAttribution } from '@/components/food/FoodDataAttribution';
 import { FoodSearchRow } from '@/components/food/FoodSearchRow';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { HeaderButton } from '@/components/ui/HeaderButton';
 import { SearchField } from '@/components/ui/SearchField';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { MEAL_TYPE_META } from '@/constants/nutrition';
-import { Spacing } from '@/constants/theme';
+import { Radii, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useFoodSearch } from '@/hooks/useFoodSearch';
+import { builderForChain } from '@/lib/food/builders';
 import { matchRowToFood } from '@/lib/scan/reviewStore';
 import type { FoodDetail } from '@/types';
 import { defaultMealType } from '@/utils/mealTime';
@@ -34,6 +36,7 @@ export default function FoodSearchScreen() {
   // Built-in results are instant; the short debounce just spares Open Food Facts a request per keystroke.
   const debouncedQuery = useDebouncedValue(query.trim(), 300);
   const search = useFoodSearch(debouncedQuery);
+  const builder = builderForChain(search.chainNamed);
 
   const choose = (food: FoodDetail) => {
     if (pickRowId) {
@@ -95,6 +98,24 @@ export default function FoodSearchScreen() {
             <ThemedText variant="footnote" color="secondary" style={styles.sectionTitle}>
               {section.title.toUpperCase()}
             </ThemedText>
+            {section.key === 'restaurants' && builder && !pickRowId ? (
+              <Pressable
+                onPress={() => router.push({ pathname: '/food/build', params: { builder: builder.key, mealType } })}
+                accessibilityRole="button"
+                accessibilityLabel={`Build your ${builder.chain} order`}
+                style={({ pressed }) => [styles.builder, { backgroundColor: colors.fab, opacity: pressed ? 0.85 : 1 }]}
+              >
+                <View style={styles.builderText}>
+                  <ThemedText variant="headline" style={{ color: colors.fabIcon }}>
+                    Build your order
+                  </ThemedText>
+                  <ThemedText variant="footnote" style={{ color: colors.fabIcon, opacity: 0.75 }}>
+                    Pick it like you’d order it; the total is the menu’s own numbers.
+                  </ThemedText>
+                </View>
+                <AppIcon name="chevronRight" size={14} color={colors.fabIcon} weight="semibold" />
+              </Pressable>
+            ) : null}
           </View>
         )}
         renderSectionFooter={({ section }) => sectionFooter(section.key)}
@@ -136,6 +157,8 @@ const styles = StyleSheet.create({
   list: { flexGrow: 1, paddingBottom: Spacing['3xl'] },
   sectionHeader: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.xs },
   sectionTitle: { letterSpacing: 0.5 },
+  builder: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.sm, padding: Spacing.lg, borderRadius: Radii.xl },
+  builderText: { flex: 1, gap: 2 },
   inline: { marginVertical: Spacing.lg },
   note: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
   noteText: { flex: 1 },
