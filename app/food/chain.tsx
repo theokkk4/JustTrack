@@ -63,7 +63,7 @@ export default function ChainMenuScreen() {
       <SectionList
         sections={sections}
         keyExtractor={(food) => food.id}
-        stickySectionHeadersEnabled
+        stickySectionHeadersEnabled={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         ListHeaderComponent={
@@ -107,7 +107,12 @@ export default function ChainMenuScreen() {
             </ThemedText>
           </View>
         )}
-        renderItem={({ item }) => <FoodSearchRow food={item} onPress={() => choose(item)} hideBrand />}
+        renderItem={({ item, index, section }) => (
+          <View style={styles.rowWrap}>
+            <FoodSearchRow food={item} onPress={() => choose(item)} hideBrand thumb={false} position={section.data.length === 1 ? 'only' : index === 0 ? 'first' : index === section.data.length - 1 ? 'last' : 'middle'} />
+          </View>
+        )}
+        renderSectionFooter={() => <View style={styles.gap} />}
         ListEmptyComponent={
           menu.length === 0 ? (
             <EmptyState icon="clock" title="Menu coming soon" message={`${chain} isn’t in our menu data yet. Search for the item by name, or snap a photo and the scanner will estimate it.`} />
@@ -129,6 +134,8 @@ const styles = StyleSheet.create({
   titleBlock: { flex: 1, gap: 2 },
   builder: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.lg, borderRadius: Radii.xl },
   builderText: { flex: 1, gap: 2 },
-  sectionHeader: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.xs },
+  sectionHeader: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.sm },
+  rowWrap: { paddingHorizontal: Spacing.lg },
+  gap: { height: Spacing.xs },
   sectionTitle: { letterSpacing: 0.5 },
 });
