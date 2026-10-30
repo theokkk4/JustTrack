@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
+import Svg, { Circle, ClipPath, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { ThemedText } from '@/components/ui/ThemedText';
 import type { Ingredient, Shape } from '@/lib/food/builders/visual';
@@ -13,90 +14,459 @@ interface BuildPreviewProps {
 }
 
 const W = 240;
-const H = 150;
+const H = 140;
 
 /** Deterministic scatter so a topping lands in the same spots every render. */
-function scatter(seed: string, n: number, box: { x: number; y: number; w: number; h: number }): { x: number; y: number }[] {
-  let state = 0;
+function scatter(seed: string, n: number, box: Box): { x: number; y: number; r: number }[] {
+  let state = 7;
   for (const char of seed) state = (state * 31 + char.charCodeAt(0)) >>> 0;
   const next = () => {
     state = (state * 1664525 + 1013904223) >>> 0;
     return state / 4294967296;
   };
-  return Array.from({ length: n }, () => ({ x: box.x + next() * box.w, y: box.y + next() * box.h }));
+  return Array.from({ length: n }, () => ({ x: box.x + next() * box.w, y: box.y + next() * box.h, r: next() }));
 }
 
-/** One ingredient drawn in its style, inside the given area. */
-function Layer({ ingredient, box, index }: { ingredient: Ingredient; box: { x: number; y: number; w: number; h: number }; index: number }) {
+interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Darken or lighten a hex color. */
+function shade(hex: string, amount: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const channel = (shift: number) => {
+    const value = (n >> shift) & 255;
+    const next = amount < 0 ? value * (1 + amount) : value + (255 - value) * amount;
+    return Math.round(Math.max(0, Math.min(255, next)));
+  };
+  return `#${((channel(16) << 16) | (channel(8) << 8) | channel(0)).toString(16).padStart(6, '0')}`;
+}
+
+/** Where food sits and how it's clipped, per vessel. */
+function fillArea(shape: Shape, length: number): { box: Box; clip: React.ReactNode } {
+  switch (shape) {
+    case 'bowl':
+      return { box: { x: 34, y: 26, w: W - 68, h: 54 }, clip: <Ellipse cx={W / 2} cy={54} rx={92} ry={30} /> };
+    case 'plate':
+      return { box: { x: 44, y: 34, w: W - 88, h: 46 }, clip: <Ellipse cx={W / 2} cy={58} rx={82} ry={26} /> };
+    case 'wrap':
+      return { box: { x: 38, y: 50, w: 44, h: 44 }, clip: <Ellipse cx={60} cy={72} rx={23} ry={25} /> };
+    case 'tacos':
+      return { box: { x: 30, y: 38, w: W - 60, h: 34 }, clip: <Rect x={20} y={24} width={W - 40} height={52} rx={14} /> };
+    default: {
+      const span = W * length;
+      return { box: { x: (W - span) / 2 + 10, y: 56, w: span - 20, h: 26 }, clip: <Rect x={(W - span) / 2 - 10} y={0} width={span + 20} height={94} /> };
+    }
+  }
+}
+
+/** One ingredient drawn in its style, inside the given area, as its own animated layer. */
+function Layer({ ingredient, box, index, shape, clip }: { ingredient: Ingredient; box: Box; index: number; shape: Shape; clip: React.ReactNode }) {
   const { color, style, count, id } = ingredient;
-  const lift = -index * 2;
-  const common = { position: 'absolute' as const, backgroundColor: color };
-  const entering = ZoomIn.springify().damping(14).stiffness(180).delay(index * 20);
-  if (style === 'bed') {
-    const inset = 2 + index * 2;
-    return <Animated.View entering={entering} exiting={FadeOut.duration(150)} style={[common, { left: inset, top: inset / 2 + lift, width: box.w - inset * 2, height: box.h - inset, borderRadius: 999, opacity: 0.96 }]} />;
+  const key = `g-${id}`;
+  const entering = style === 'drizzle' ? FadeIn.duration(260) : ZoomIn.springify().damping(14).stiffness(180).delay(index * 24);
+  const lift = shape === 'sub' ? -index * 7 : -index * 1.5;
+  const gradient = (
+    <LinearGradient id={key} x1="0" y1="0" x2="0" y2="1">
+      <Stop offset="0" stopColor={shade(color, 0.22)} />
+      <Stop offset="1" stopColor={shade(color, -0.22)} />
+    </LinearGradient>
+  );
+
+  let body: React.ReactNode;
+  if (shape === 'sub') {
+    body = <SubBand ingredient={ingredient} box={box} index={index} gradientId={key} />;
+  } else if (style === 'bed') {
+    {
+      const inset = 2 + index * 3;
+      body = (
+        <>
+          <Ellipse cx={box.x + box.w / 2} cy={box.y + box.h / 2 + 2} rx={box.w / 2 - inset} ry={box.h / 2 - inset / 2} fill={`url(#${key})`} />
+          {/* Grains / texture */}
+          {scatter(`${id}-grain`, 18, { x: box.x + 14, y: box.y + 8, w: box.w - 28, h: box.h - 18 }).map((p, i) => (
+            <Rect key={i} x={p.x} y={p.y} width={5} height={2.4} rx={1.2} fill={shade(color, i % 2 ? 0.35 : -0.18)} opacity={0.8} transform={`rotate(${(i * 47) % 180} ${p.x} ${p.y})`} />
+          ))}
+        </>
+      );
+    }
+  } else if (style === 'drizzle') {
+    const paths = scatter(`${id}-dz`, 3, { x: box.x + box.w * 0.15, y: box.y + box.h * 0.25, w: box.w * 0.55, h: box.h * 0.35 });
+    body = paths.map((p, i) => {
+      const span = Math.min(box.w * 0.42, 48 + i * 12);
+      const d = `M${p.x} ${p.y} q${span * 0.25} ${-9 - i * 2} ${span * 0.5} 0 t${span * 0.5} ${4 + i}`;
+      return (
+        <G key={i}>
+          <Path d={d} stroke={shade(color, -0.25)} strokeWidth={6} fill="none" strokeLinecap="round" opacity={0.6} />
+          <Path d={d} stroke={color} strokeWidth={4.5} fill="none" strokeLinecap="round" />
+          <Path d={d} stroke={shade(color, 0.45)} strokeWidth={1.4} fill="none" strokeLinecap="round" opacity={0.8} transform="translate(0 -1.2)" />
+        </G>
+      );
+    });
+  } else if (style === 'chunks') {
+    const n = 5 * count;
+    const points = scatter(`${id}-ch`, n, { x: box.x + box.w * 0.06, y: box.y + box.h * 0.1, w: box.w * 0.8, h: box.h * 0.55 });
+    body = points.map((p, i) => {
+      const w = 17 + (i % 3) * 4;
+      const h = 12 + (i % 2) * 3;
+      const rot = (i * 37) % 70 - 35;
+      return (
+        <G key={i} transform={`rotate(${rot} ${p.x + w / 2} ${p.y + h / 2})`}>
+          <Rect x={p.x} y={p.y + 2} width={w} height={h} rx={5} fill={shade(color, -0.4)} opacity={0.5} />
+          <Rect x={p.x} y={p.y} width={w} height={h} rx={5} fill={`url(#${key})`} stroke={shade(color, -0.3)} strokeWidth={0.8} />
+          <Rect x={p.x + 3} y={p.y + 2} width={w * 0.5} height={3} rx={1.5} fill={shade(color, 0.5)} opacity={0.55} />
+          {/* Char marks */}
+          <Rect x={p.x + w * 0.55} y={p.y + h * 0.45} width={w * 0.3} height={1.6} rx={0.8} fill={shade(color, -0.55)} opacity={0.6} />
+        </G>
+      );
+    });
+  } else if (style === 'slices') {
+    const points = scatter(`${id}-sl`, 5, { x: box.x + box.w * 0.08, y: box.y + box.h * 0.12, w: box.w * 0.78, h: box.h * 0.55 });
+    body = points.map((p, i) => (
+      <G key={i} transform={`rotate(${(i * 53) % 90 - 45} ${p.x} ${p.y})`}>
+        <Ellipse cx={p.x} cy={p.y} rx={11} ry={4.2} fill={`url(#${key})`} stroke={shade(color, -0.3)} strokeWidth={0.7} />
+        <Ellipse cx={p.x} cy={p.y - 0.6} rx={6} ry={1.4} fill={shade(color, 0.5)} opacity={0.55} />
+      </G>
+    ));
+  } else if (style === 'shreds' || style === 'sheet') {
+    const points = scatter(`${id}-sh`, 12, { x: box.x + box.w * 0.06, y: box.y + box.h * 0.08, w: box.w * 0.84, h: box.h * 0.6 });
+    body = points.map((p, i) => (
+      <G key={i} transform={`rotate(${(i * 41) % 140 - 70} ${p.x} ${p.y})`}>
+        <Path d={`M${p.x - 8} ${p.y} q4 -3 8 0 t8 0`} stroke={shade(color, -0.25)} strokeWidth={3.4} fill="none" strokeLinecap="round" />
+        <Path d={`M${p.x - 8} ${p.y} q4 -3 8 0 t8 0`} stroke={shade(color, 0.25)} strokeWidth={1.6} fill="none" strokeLinecap="round" transform="translate(0 -0.8)" />
+      </G>
+    ));
+  } else {
+    const points = scatter(`${id}-dt`, 9, { x: box.x + box.w * 0.08, y: box.y + box.h * 0.1, w: box.w * 0.8, h: box.h * 0.6 });
+    body = points.map((p, i) => {
+      const r = 3.6 + (i % 3) * 0.8;
+      return (
+        <G key={i}>
+          <Circle cx={p.x} cy={p.y + 1} r={r} fill={shade(color, -0.45)} opacity={0.45} />
+          <Circle cx={p.x} cy={p.y} r={r} fill={`url(#${key})`} />
+          <Circle cx={p.x - r * 0.3} cy={p.y - r * 0.35} r={r * 0.32} fill={shade(color, 0.6)} opacity={0.7} />
+        </G>
+      );
+    });
   }
-  if (style === 'drizzle') {
-    return (
-      <Animated.View entering={FadeIn.duration(250)} exiting={FadeOut.duration(150)} pointerEvents="none" style={[StyleSheet.absoluteFill, { top: lift }]}>
-        {scatter(id, 3, { x: box.w * 0.15, y: box.h * 0.25, w: box.w * 0.6, h: box.h * 0.4 }).map((p, i) => (
-          <View key={i} style={[common, { left: p.x - 22, top: p.y, width: 44 + i * 10, height: 6, borderRadius: 3, transform: [{ rotate: `${-18 + i * 14}deg` }], opacity: 0.95 }]} />
-        ))}
-      </Animated.View>
-    );
-  }
-  const n = style === 'chunks' ? 5 * count : style === 'slices' ? 5 : style === 'shreds' ? 10 : 8;
-  const size = style === 'chunks' ? 18 : style === 'slices' ? 14 : style === 'shreds' ? 4 : 8;
-  const points = scatter(id, n, { x: box.w * 0.08, y: box.h * 0.12, w: box.w * 0.8, h: box.h * 0.6 });
+
   return (
     <Animated.View entering={entering} exiting={FadeOut.duration(150)} pointerEvents="none" style={[StyleSheet.absoluteFill, { top: lift }]}>
-      {points.map((p, i) => (
-        <View
-          key={i}
-          style={[
-            common,
-            style === 'chunks' && { left: p.x, top: p.y, width: size + (i % 3) * 3, height: size - 3, borderRadius: 6, transform: [{ rotate: `${(i * 37) % 60 - 30}deg` }] },
-            style === 'slices' && { left: p.x, top: p.y, width: size + 4, height: 5, borderRadius: 3, transform: [{ rotate: `${(i * 53) % 90 - 45}deg` }] },
-            style === 'shreds' && { left: p.x, top: p.y, width: 14, height: size, borderRadius: 2, transform: [{ rotate: `${(i * 41) % 120 - 60}deg` }] },
-            style === 'dots' && { left: p.x, top: p.y, width: size, height: size, borderRadius: size / 2 },
-          ]}
-        />
-      ))}
+      <Svg width={W} height={H}>
+        <Defs>
+          {gradient}
+          <ClipPath id={`clip-${id}`}>{clip}</ClipPath>
+        </Defs>
+        <G clipPath={`url(#clip-${id})`}>{body}</G>
+      </Svg>
     </Animated.View>
   );
 }
 
 /**
- * A playful, not-quite-3D picture of the order: a bowl, wrap, tacos, sub or
- * plate that fills up as options are picked. Each ingredient is a layer that
- * pops in; double portions scatter more of it.
+ * In a sandwich every ingredient is a full-width layer: meat folds in ribbons,
+ * cheese drapes over the edges, lettuce ruffles, tomato and onion peek out in
+ * a row, sauce runs along the top. Layers stack upward from the bottom roll.
+ */
+function SubBand({ ingredient, box, index, gradientId }: { ingredient: Ingredient; box: Box; index: number; gradientId: string }) {
+  const { color, style, count } = ingredient;
+  const x0 = box.x;
+  const x1 = box.x + box.w;
+  const w = box.w;
+  const y = box.y + box.h; // the layer's baseline, on top of the bottom roll
+  const fill = `url(#${gradientId})`;
+  const dark = shade(color, -0.3);
+  const light = shade(color, 0.4);
+
+  if (style === 'chunks') {
+    // Folded ribbons of meat: a wavy strip, doubled when it's a double.
+    const ribbons = count === 2 ? 3 : 2;
+    return (
+      <>
+        {Array.from({ length: ribbons }, (_, r) => {
+          const base = y - r * 4;
+          const wave = Array.from({ length: 6 }, (_, k) => `q${w / 12} ${k % 2 ? 5 : -5} ${w / 6} 0`).join(' ');
+          return (
+            <G key={r}>
+              <Path d={`M${x0 - 3} ${base} ${wave} v-9 M${x1 + 3} ${base - 9}`} fill="none" />
+              <Path d={`M${x0 - 3} ${base} ${wave} v-9 ${Array.from({ length: 6 }, (_, k) => `q${-w / 12} ${k % 2 ? -5 : 5} ${-w / 6} 0`).join(' ')} Z`} fill={fill} stroke={dark} strokeWidth={0.8} />
+              <Path d={`M${x0 + 4} ${base - 8} ${Array.from({ length: 6 }, (_, k) => `q${w / 12} ${k % 2 ? 4 : -4} ${w / 6 - 1.2} 0`).join(' ')}`} fill="none" stroke={light} strokeWidth={1.3} opacity={0.55} />
+            </G>
+          );
+        })}
+      </>
+    );
+  }
+  if (style === 'sheet') {
+    // A slice of cheese draped over the sides, corners hanging.
+    return (
+      <>
+        <Path d={`M${x0 - 6} ${y - 2} L${x0 - 2} ${y + 9} L${x0 + 10} ${y + 1} H${x1 - 10} L${x1 + 2} ${y + 9} L${x1 + 6} ${y - 2} Z`} fill={shade(color, -0.2)} />
+        <Path d={`M${x0 - 6} ${y - 2} H${x1 + 6} v-5 H${x0 - 6} Z`} fill={fill} />
+        <Path d={`M${x0} ${y - 5.5} H${x1}`} stroke={light} strokeWidth={1.2} opacity={0.6} />
+      </>
+    );
+  }
+  if (style === 'shreds') {
+    // Ruffled lettuce: overlapping leaf tips with a crinkle line in each, hanging past the edges.
+    const n = Math.max(7, Math.round(w / 11));
+    const step = (w + 10) / n;
+    return (
+      <>
+        <Path d={`M${x0 - 4} ${y - 3} H${x1 + 4} v6 H${x0 - 4} Z`} fill={dark} />
+        {Array.from({ length: n + 1 }, (_, k) => {
+          const cx = x0 - 5 + k * step;
+          const rx = 9 + (k % 3) * 1.5;
+          const dy = (k % 2) * 3 - 1;
+          return (
+            <G key={k} transform={`rotate(${(k * 23) % 24 - 12} ${cx} ${y + dy})`}>
+              <Ellipse cx={cx} cy={y + dy} rx={rx} ry={4.6} fill={k % 2 ? fill : shade(color, 0.12)} stroke={dark} strokeWidth={0.6} />
+              <Path d={`M${cx - rx * 0.7} ${y + dy + 1} q${rx * 0.35} -4 ${rx * 0.7} -1 t${rx * 0.7} 0`} stroke={light} strokeWidth={1} fill="none" opacity={0.75} />
+            </G>
+          );
+        })}
+      </>
+    );
+  }
+  if (style === 'slices' || (style === 'dots' && /tomato/i.test(ingredient.label))) {
+    // A row of rounds peeking out between the layers.
+    const n = Math.max(4, Math.round(w / 26));
+    const step = w / n;
+    const ring = /onion/i.test(ingredient.label);
+    const flat = /bacon|pickle|pepper/i.test(ingredient.label);
+    return (
+      <>
+        {Array.from({ length: n }, (_, k) => {
+          const cx = x0 + step * (k + 0.5) + ((k % 2) - 0.5) * 4;
+          const r = 8 + (k % 2) * 1.5;
+          if (flat) {
+            return (
+              <G key={k} transform={`rotate(${(k * 29) % 30 - 15} ${cx} ${y})`}>
+                <Rect x={cx - 11} y={y - 4} width={22} height={6} rx={3} fill={fill} stroke={dark} strokeWidth={0.7} />
+                <Path d={`M${cx - 8} ${y - 1.5} q4 -2 8 0 t8 0`} stroke={light} strokeWidth={1.2} fill="none" opacity={0.7} />
+              </G>
+            );
+          }
+          return (
+            <G key={k}>
+              <Circle cx={cx} cy={y + 1} r={r} fill={ring ? 'none' : dark} stroke={ring ? dark : 'none'} strokeWidth={2.5} opacity={0.6} />
+              <Circle cx={cx} cy={y - 1} r={r} fill={ring ? 'none' : fill} stroke={ring ? color : dark} strokeWidth={ring ? 2.6 : 0.7} />
+              {ring ? null : <Circle cx={cx} cy={y - 1} r={r * 0.55} fill={light} opacity={0.55} />}
+            </G>
+          );
+        })}
+      </>
+    );
+  }
+  if (style === 'drizzle') {
+    const wave = Array.from({ length: 8 }, (_, k) => `q${w / 16} ${k % 2 ? 4 : -4} ${w / 8} 0`).join(' ');
+    return (
+      <>
+        <Path d={`M${x0 + 2} ${y - 1} ${wave}`} stroke={dark} strokeWidth={4} fill="none" strokeLinecap="round" opacity={0.5} />
+        <Path d={`M${x0 + 2} ${y - 2} ${wave}`} stroke={color} strokeWidth={3} fill="none" strokeLinecap="round" />
+      </>
+    );
+  }
+  if (style === 'dots') {
+    const n = Math.max(6, Math.round(w / 14));
+    return (
+      <>
+        {Array.from({ length: n }, (_, k) => {
+          const cx = x0 + (w / n) * (k + 0.5);
+          return <Circle key={k} cx={cx} cy={y - 2 + (k % 2) * 2} r={4} fill={fill} stroke={dark} strokeWidth={0.6} />;
+        })}
+      </>
+    );
+  }
+  // bed: a spread along the roll
+  return <Path d={`M${x0 - 2} ${y + 2} H${x1 + 2} v-6 Q${(x0 + x1) / 2} ${y - 9} ${x0 - 2} ${y - 4} Z`} fill={fill} />;
+}
+
+const BOWL = '#5B47D6';
+const BREAD = '#E7B86B';
+
+/** The dish before anything goes in: shadow and the body, with the opening dark and empty. */
+function VesselBack({ shape, length }: { shape: Shape; length: number }) {
+  const span = W * length;
+  const x0 = (W - span) / 2;
+  return (
+    <Svg width={W} height={H} style={StyleSheet.absoluteFill}>
+      <Defs>
+        <LinearGradient id="v-bowl" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor={shade(BOWL, 0.28)} />
+          <Stop offset="0.55" stopColor={BOWL} />
+          <Stop offset="1" stopColor={shade(BOWL, -0.38)} />
+        </LinearGradient>
+        <RadialGradient id="v-inside" cx="50%" cy="25%" rx="60%" ry="80%">
+          <Stop offset="0" stopColor={shade(BOWL, -0.2)} />
+          <Stop offset="1" stopColor={shade(BOWL, -0.62)} />
+        </RadialGradient>
+        <LinearGradient id="v-plate" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#FFFFFF" />
+          <Stop offset="1" stopColor="#D8D1F2" />
+        </LinearGradient>
+        <RadialGradient id="v-plate-well" cx="50%" cy="40%" rx="55%" ry="70%">
+          <Stop offset="0" stopColor="#FFFFFF" />
+          <Stop offset="1" stopColor="#E6E1F8" />
+        </RadialGradient>
+        <LinearGradient id="v-crust" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={shade(BREAD, 0.12)} />
+          <Stop offset="1" stopColor={shade(BREAD, -0.32)} />
+        </LinearGradient>
+        <LinearGradient id="v-crumb" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#FBEFD6" />
+          <Stop offset="1" stopColor="#F0DDB4" />
+        </LinearGradient>
+        <LinearGradient id="v-tortilla" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#F6E2B8" />
+          <Stop offset="0.6" stopColor="#E9C98F" />
+          <Stop offset="1" stopColor="#C9A262" />
+        </LinearGradient>
+        <LinearGradient id="v-shell" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#F3D27E" />
+          <Stop offset="1" stopColor="#C9933A" />
+        </LinearGradient>
+      </Defs>
+      <Ellipse cx={W / 2} cy={H - 10} rx={shape === 'sub' ? span / 2 + 6 : 86} ry={8} fill="#000" opacity={0.16} />
+
+      {shape === 'bowl' ? (
+        <>
+          <Path d={`M26 54 C26 92 60 122 ${W / 2} 122 C${W - 60} 122 ${W - 26} 92 ${W - 26} 54 Z`} fill="url(#v-bowl)" />
+          <Ellipse cx={W / 2} cy={54} rx={94} ry={28} fill="url(#v-inside)" />
+          <Ellipse cx={W / 2} cy={54} rx={94} ry={28} fill="none" stroke={shade(BOWL, 0.45)} strokeWidth={2.5} opacity={0.6} />
+        </>
+      ) : null}
+
+      {shape === 'plate' ? (
+        <>
+          <Ellipse cx={W / 2} cy={62} rx={110} ry={40} fill="url(#v-plate)" />
+          <Ellipse cx={W / 2} cy={62} rx={110} ry={40} fill="none" stroke="#B4A8E3" strokeWidth={2} opacity={0.9} />
+          <Ellipse cx={W / 2} cy={60} rx={84} ry={28} fill="url(#v-plate-well)" />
+          <Ellipse cx={W / 2} cy={60} rx={84} ry={28} fill="none" stroke="#D8D1F2" strokeWidth={1.5} />
+        </>
+      ) : null}
+
+      {shape === 'sub' ? (
+        <>
+          {/* Bottom half: crust, then the pale cut face the fillings sit on. */}
+          <Path d={`M${x0 + 10} 84 H${x0 + span - 10} q12 0 12 14 q0 16 -14 16 H${x0 + 12} q-14 0 -14 -16 q0 -14 12 -14 Z`} fill="url(#v-crust)" />
+          <Path d={`M${x0 + 8} 84 H${x0 + span - 8} q5 0 5 4 q0 4 -5 4 H${x0 + 8} q-5 0 -5 -4 q0 -4 5 -4 Z`} fill="url(#v-crumb)" />
+          <Path d={`M${x0 + 16} 108 q${span / 2 - 16} 6 ${span - 32} 0`} stroke="#FFFFFF" strokeWidth={1.5} fill="none" opacity={0.18} strokeLinecap="round" />
+        </>
+      ) : null}
+
+      {shape === 'wrap' ? (
+        <>
+          {/* Burrito on its side, cut end facing us. */}
+          <Path d={`M60 46 H${W - 52} a28 28 0 0 1 0 52 H60 Z`} fill="url(#v-tortilla)" />
+          <Path d={`M100 46 q10 26 0 52`} stroke="#C9A262" strokeWidth={2} fill="none" opacity={0.5} />
+          <Path d={`M138 46 q-10 26 0 52`} stroke="#C9A262" strokeWidth={2} fill="none" opacity={0.5} />
+          <Path d={`M172 48 q8 24 0 48`} stroke="#C9A262" strokeWidth={2} fill="none" opacity={0.4} />
+          <Ellipse cx={60} cy={72} rx={26} ry={28} fill="#F3DDB0" />
+          <Ellipse cx={60} cy={72} rx={23} ry={25} fill="#D9B98A" />
+        </>
+      ) : null}
+
+      {shape === 'tacos'
+        ? [0, 1, 2].map((i) => (
+            <G key={i} transform={`translate(${44 + i * 56} 0) rotate(${-6 + i * 6} 28 70)`}>
+              <Path d="M0 60 a28 28 0 0 1 56 0 V70 a28 36 0 0 1 -56 0 Z" fill="url(#v-shell)" opacity={0.55} />
+            </G>
+          ))
+        : null}
+    </Svg>
+  );
+}
+
+/** The parts of the dish that sit in front of the food. */
+function VesselFront({ shape, length, stack }: { shape: Shape; length: number; stack: number }) {
+  const span = W * length;
+  const x0 = (W - span) / 2;
+  const rise = Math.min(stack * 7, 52);
+  return (
+    <Svg width={W} height={H} style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Defs>
+        <LinearGradient id="f-rim" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor={shade(BOWL, 0.35)} />
+          <Stop offset="0.5" stopColor={shade(BOWL, 0.1)} />
+          <Stop offset="1" stopColor={shade(BOWL, -0.3)} />
+        </LinearGradient>
+        <LinearGradient id="f-top" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={shade(BREAD, 0.25)} />
+          <Stop offset="0.7" stopColor={BREAD} />
+          <Stop offset="1" stopColor={shade(BREAD, -0.3)} />
+        </LinearGradient>
+        <LinearGradient id="f-shell" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#F3D27E" />
+          <Stop offset="1" stopColor="#B97F2C" />
+        </LinearGradient>
+      </Defs>
+
+      {shape === 'bowl' ? (
+        <>
+          {/* Front rim: the lip of the bowl over the food, plus a glossy highlight on the body. */}
+          <Path d={`M26 54 A94 28 0 0 0 ${W - 26} 54`} stroke="url(#f-rim)" strokeWidth={5} fill="none" strokeLinecap="round" />
+          <Path d={`M44 78 C52 100 76 114 100 118`} stroke="#FFFFFF" strokeWidth={4} fill="none" strokeLinecap="round" opacity={0.18} />
+        </>
+      ) : null}
+
+      {shape === 'plate' ? <Path d={`M${W / 2 - 84} 60 A84 28 0 0 0 ${W / 2 + 84} 60`} stroke="#FFFFFF" strokeWidth={2} fill="none" opacity={0.9} /> : null}
+
+      {shape === 'sub' ? (
+        <>
+          {/* Top half: a domed roll with a score line, sheen and sesame. */}
+          <G transform={`translate(0 ${-rise})`}>
+            <Path d={`M${x0 + 6} 84 q-8 0 -8 -10 q0 -34 ${span / 2 + 2} -34 q${span / 2 + 2} 0 ${span / 2 + 2} 34 q0 10 -8 10 Z`} fill="url(#f-top)" />
+            <Path d={`M${x0 + 2} 78 q4 6 ${span - 4} 0`} stroke={shade(BREAD, -0.45)} strokeWidth={2} fill="none" opacity={0.35} />
+            <Path d={`M${x0 + 22} 56 q${span / 2 - 22} -16 ${span - 44} 0`} stroke="#FFFFFF" strokeWidth={3} fill="none" strokeLinecap="round" opacity={0.3} />
+            {scatter('sesame', Math.round(span / 16), { x: x0 + 18, y: 44, w: span - 36, h: 20 }).map((p, i) => (
+              <Ellipse key={i} cx={p.x} cy={p.y + Math.abs(p.x - W / 2) / 10} rx={2.2} ry={1.3} fill="#FFF4D8" transform={`rotate(${(i * 61) % 90 - 45} ${p.x} ${p.y})`} opacity={0.95} />
+            ))}
+          </G>
+        </>
+      ) : null}
+
+      {shape === 'wrap' ? (
+        <>
+          <Path d={`M60 46 H${W - 52} a28 28 0 0 1 0 52 H60`} stroke="#B8914E" strokeWidth={1} fill="none" opacity={0.5} />
+          <Path d={`M74 52 H${W - 70}`} stroke="#FFFFFF" strokeWidth={3} strokeLinecap="round" fill="none" opacity={0.28} />
+          <Ellipse cx={60} cy={72} rx={26} ry={28} fill="none" stroke="#C9A262" strokeWidth={1.2} opacity={0.6} />
+        </>
+      ) : null}
+
+      {shape === 'tacos'
+        ? [0, 1, 2].map((i) => (
+            <G key={i} transform={`translate(${44 + i * 56} 0) rotate(${-6 + i * 6} 28 70)`}>
+              <Path d="M0 64 a28 40 0 0 0 56 0 V70 a28 36 0 0 1 -56 0 Z" fill="url(#f-shell)" />
+              <Path d="M6 78 q22 16 44 0" stroke="#FFFFFF" strokeWidth={2} fill="none" opacity={0.25} strokeLinecap="round" />
+            </G>
+          ))
+        : null}
+    </Svg>
+  );
+}
+
+/**
+ * A picture of the order, drawn with shading so it reads as a real dish:
+ * a ceramic bowl seen from above, a cut burrito, three shells, a sub with a
+ * domed sesame roll, or a plate. Each ingredient is a layer that pops in;
+ * double portions scatter more of it.
  */
 export function BuildPreview({ shape, ingredients, length = 0.8 }: BuildPreviewProps) {
-  const fill = shape === 'bowl' ? { x: 28, y: 34, w: W - 56, h: 54 } : shape === 'plate' ? { x: 30, y: 36, w: W - 60, h: 58 } : shape === 'wrap' ? { x: 60, y: 54, w: W - 120, h: 36 } : shape === 'tacos' ? { x: 36, y: 44, w: W - 72, h: 40 } : { x: (W - W * length) / 2 + 10, y: 52, w: W * length - 20, h: 34 };
+  const { box, clip } = fillArea(shape, length);
   const label = ingredients.length === 0 ? 'Pick something to start' : `${ingredients.filter((i) => i.count === 2).length ? 'Double up · ' : ''}${ingredients.length} ${ingredients.length === 1 ? 'thing' : 'things'} in`;
 
   return (
     <View style={styles.stage} accessible accessibilityLabel={`Your order: ${ingredients.map((i) => (i.count === 2 ? `double ${i.label}` : i.label)).join(', ') || 'empty'}`}>
       <View style={styles.canvas}>
-        {/* Vessel: back half */}
-        {shape === 'bowl' || shape === 'plate' ? <View style={[styles.rimBack, shape === 'plate' && styles.plateBack]} /> : null}
-        {shape === 'wrap' ? <View style={styles.wrapBody} /> : null}
-        {shape === 'tacos' ? [0, 1, 2].map((i) => <View key={i} style={[styles.taco, { left: 40 + i * 58, transform: [{ rotate: `${-8 + i * 8}deg` }] }]} />) : null}
-        {shape === 'sub' ? <View style={[styles.subBottom, { left: (W - W * length) / 2, width: W * length }]} /> : null}
-
-        {/* Everything that goes in is clipped to the vessel's opening, so nothing spills over the rim. */}
-        <View style={[styles.clip, { left: fill.x, top: fill.y, width: fill.w, height: fill.h, borderRadius: shape === 'sub' ? 14 : 999 }]} pointerEvents="none">
-          {ingredients.map((ingredient, index) => (
-            <Layer key={ingredient.id + ingredient.count} ingredient={ingredient} box={fill} index={index} />
-          ))}
-        </View>
-
-        {/* Vessel: front half, drawn over the layers */}
-        {shape === 'bowl' ? <View style={styles.bowlFront} /> : null}
-        {shape === 'plate' ? <View style={styles.plateFront} /> : null}
-        {shape === 'wrap' ? <View style={styles.wrapFold} /> : null}
-        {shape === 'sub' ? <View style={[styles.subTop, { left: (W - W * length) / 2 + 6, width: W * length - 12 }]} /> : null}
-        {shape === 'tacos' ? [0, 1, 2].map((i) => <View key={i} style={[styles.tacoFront, { left: 40 + i * 58, transform: [{ rotate: `${-8 + i * 8}deg` }] }]} />) : null}
+        <VesselBack shape={shape} length={length} />
+        {/* Everything that goes in is clipped to the opening, so nothing spills over the rim. */}
+        {ingredients.map((ingredient, index) => (
+          <Layer key={ingredient.id + ingredient.count} ingredient={ingredient} box={box} index={index} shape={shape} clip={clip} />
+        ))}
+        <VesselFront shape={shape} length={length} stack={ingredients.length} />
       </View>
       <Animated.View key={label} entering={FadeIn.duration(200)}>
         <ThemedText variant="caption1" color="secondary" style={styles.caption}>
@@ -107,24 +477,8 @@ export function BuildPreview({ shape, ingredients, length = 0.8 }: BuildPreviewP
   );
 }
 
-const BOWL = '#4B3BBF';
-const BOWL_LIGHT = '#6A5AE0';
-const BREAD = '#E9C98F';
-const BREAD_DARK = '#C9A262';
-
 const styles = StyleSheet.create({
   stage: { alignItems: 'center', gap: 6 },
-  canvas: { width: W, height: H - 20 },
-  clip: { position: 'absolute', overflow: 'hidden' },
-  rimBack: { position: 'absolute', left: 20, top: 28, width: W - 40, height: 64, borderRadius: 999, backgroundColor: BOWL_LIGHT },
-  plateBack: { left: 16, top: 26, width: W - 32, height: 78, backgroundColor: '#FFFFFF', borderWidth: 8, borderColor: '#D9D2F6' },
-  bowlFront: { position: 'absolute', left: 24, top: 66, width: W - 48, height: 70, borderBottomLeftRadius: 110, borderBottomRightRadius: 110, borderTopLeftRadius: 40, borderTopRightRadius: 40, backgroundColor: BOWL, opacity: 0.92 },
-  plateFront: { position: 'absolute', left: 16, top: 86, width: W - 32, height: 26, borderBottomLeftRadius: 999, borderBottomRightRadius: 999, backgroundColor: '#C9C0F0', opacity: 0.55 },
-  wrapBody: { position: 'absolute', left: 34, top: 44, width: W - 68, height: 64, borderRadius: 32, backgroundColor: BREAD },
-  wrapFold: { position: 'absolute', left: 34, top: 44, width: 74, height: 64, borderRadius: 32, backgroundColor: BREAD_DARK, opacity: 0.55 },
-  taco: { position: 'absolute', top: 40, width: 56, height: 56, borderRadius: 28, backgroundColor: BREAD },
-  tacoFront: { position: 'absolute', top: 68, width: 56, height: 36, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, backgroundColor: BREAD_DARK },
-  subBottom: { position: 'absolute', top: 70, height: 34, borderRadius: 18, backgroundColor: BREAD_DARK },
-  subTop: { position: 'absolute', top: 22, height: 40, borderRadius: 22, backgroundColor: BREAD, opacity: 0.96 },
+  canvas: { width: W, height: H },
   caption: { textAlign: 'center' },
 });

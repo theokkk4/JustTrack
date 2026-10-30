@@ -1,5 +1,5 @@
 import { builderByKey, builderForChain, entryOf, nutritionOf, setCount, toggle, type BuilderConfig } from '../builders';
-import { ingredientsOf, shapeOf } from '../builders/visual';
+import { ingredientsOf, shapeOf, subFillings } from '../builders/visual';
 import { jerseyMikesSubs } from '../builders/jerseyMikes';
 import { getChainFood } from '../chainDatabase';
 
@@ -54,8 +54,13 @@ describe('order builders', () => {
     expect(shapeOf(chipotle, { ...bowl, bowl: 0, burrito: 1 })).toBe('wrap');
     expect(shapeOf(chipotle, { ...bowl, bowl: 0, 'tacos-soft': 1 })).toBe('tacos');
     const layers = ingredientsOf(chipotle, bowl);
-    expect(layers.map((layer) => layer.id)).toEqual(['white', 'guac', 'chicken', 'black', 'tomato-salsa']);
+    expect(layers.map((layer) => layer.id)).toEqual(['white', 'chicken', 'guac', 'black', 'tomato-salsa']);
     expect(layers.find((layer) => layer.id === 'chicken')?.count).toBe(2);
+    // A named sub is drawn from what the menu puts in it.
+    const jersey = builderByKey('jerseymikes')!;
+    const blt = jersey.steps[0].options.find((option) => /BLT/.test(option.label))!;
+    expect(ingredientsOf(jersey, { [blt.id]: 1, regular: 1 }).map((layer) => layer.label)).toEqual(['bacon', 'tomato', 'lettuce']);
+    expect(subFillings('#13 The Original Italian')).toContain('salami');
     const subway = builderByKey('subway')!;
     expect(shapeOf(subway, { ...subway.defaultSelection, wrap: 1, italian: 0 })).toBe('wrap');
     expect(shapeOf(builderByKey('panda')!, {})).toBe('plate');
