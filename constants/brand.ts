@@ -4,8 +4,8 @@ export const REPOSITORY_URL = 'https://github.com/theokkk4/JustTrack';
 
 /** Where it's from, and the promise that makes it different. */
 export const HOMETOWN = 'Philadelphia';
-export const HOMETOWN_LINE = 'Made in Philly for college students — free for everyone.';
-export const PROMISES = ['No account', 'No ads', 'Your data stays on your phone'] as const;
+export const HOMETOWN_LINE = 'Made in Philly for college students. Free and open source, for everyone.';
+export const PROMISES = ['Free and open source', 'No account, no ads', 'Your data stays on your phone'] as const;
 export const PRIVACY_LINE = 'Your log, goals, and name live on this device. Nothing is uploaded.';
 
 /**
