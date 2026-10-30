@@ -1,6 +1,8 @@
 import { ApiError, GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
 
+import { DEFAULT_MODEL, readApiKey } from './_shared/apiKey';
+
 /**
  * POST /api/analyze-meal — the only server-side code in JustTrack.
  *
@@ -10,7 +12,7 @@ import { z } from 'zod';
  * sent to the model with storage turned off and is not kept anywhere.
  */
 
-const MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.5-flash-lite';
+const MODEL = process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
 /** Base64 is 4/3 of the bytes: this is about a 2 MB image. The app sends ~300 KB. */
 const MAX_IMAGE_CHARS = 2_800_000;
 const MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -63,9 +65,9 @@ function failure(status: number, code: string, message: string): Response {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = readApiKey();
   if (!apiKey) {
-    return failure(503, 'not_configured', 'The photo scanner isn’t set up on this server yet.');
+    return failure(503, 'not_configured', 'The photo scanner isn’t set up on this server yet: add GEMINI_API_KEY in Vercel → Settings → Environment Variables (for Production and Preview), then redeploy.');
   }
 
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
