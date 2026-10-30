@@ -2,6 +2,16 @@
 
 Everything to fill in at appstoreconnect.apple.com. Copy the text as is; character limits are noted where Apple enforces them.
 
+## Pushing the text automatically
+
+`store.config.json` at the repo root holds everything in this document in EAS Metadata format, and `eas.json` points at it. Once the app record exists in App Store Connect and a build has been uploaded and processed, one command fills in the listing (name, subtitle, promo, description, keywords, URLs, categories, age rating, review notes):
+
+```bash
+npx eas-cli@latest metadata:push
+```
+
+Before the first push, replace the two placeholders in `store.config.json` under `apple.review`: `email` and `phone` (Apple's contact for review questions). Screenshots can't be pushed this way; upload them by hand in App Store Connect.
+
 ## Files in this folder
 
 | File | Use in App Store Connect |
