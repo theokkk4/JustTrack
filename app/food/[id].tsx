@@ -79,6 +79,7 @@ export default function AddFoodScreen() {
         tintHints={[food.category, food.brand]}
         badge={food.source === 'usda' ? 'USDA' : food.source === 'chain' ? 'MENU' : 'PACKAGED'}
         onBack={() => (router.canGoBack() ? router.back() : closeFlow())}
+        backIcon={router.canGoBack() ? 'back' : 'close'}
       />
 
       <View style={styles.body}>

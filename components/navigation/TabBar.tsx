@@ -6,13 +6,14 @@ import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon, type AppIconName } from '@/components/ui/AppIcon';
-import { Spacing } from '@/constants/theme';
+import { Radii, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 
 /**
- * The tab bar: four quiet icons and, in the middle, the one button that
- * matters — a big round + that starts logging. Composed inline in
- * app/(tabs)/_layout.tsx because expo-router/ui reads the TabTriggers there.
+ * The tab bar: a floating white pill with four round icon buttons and, in
+ * the middle, the one that matters — a black + that starts logging. The
+ * selected tab is a dark circle. Composed inline in app/(tabs)/_layout.tsx
+ * because expo-router/ui reads the TabTriggers there.
  */
 
 export function TabBarContainer({ style, children, ref, ...rest }: ViewProps & { ref?: React.Ref<View> }) {
@@ -20,13 +21,9 @@ export function TabBarContainer({ style, children, ref, ...rest }: ViewProps & {
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      {...rest}
-      ref={ref}
-      accessibilityRole="tablist"
-      style={[styles.container, shadows.md, { backgroundColor: colors.tabBarBackground, paddingBottom: Math.max(insets.bottom, Spacing.md) }, style]}
-    >
-      {children}
+    // TabList passes a row layout; ours comes last so the pill fills the width.
+    <View {...rest} ref={ref} accessibilityRole="tablist" style={[style, styles.container, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
+      <View style={[styles.pill, shadows.lg, { backgroundColor: colors.tabBarBackground, borderColor: colors.border }]}>{children}</View>
     </View>
   );
 }
@@ -39,7 +36,6 @@ interface TabBarButtonProps extends TabTriggerSlotProps {
 
 export function TabBarButton({ icon, activeIcon, label, isFocused, onPress, style, ref, ...rest }: TabBarButtonProps) {
   const { colors } = useAppTheme();
-  const tint = isFocused ? colors.tabIconSelected : colors.tabIconDefault;
 
   return (
     <Pressable
@@ -55,7 +51,9 @@ export function TabBarButton({ icon, activeIcon, label, isFocused, onPress, styl
       // TabTrigger injects a row layout; ours must come last to win.
       style={(state) => [typeof style === 'function' ? style(state) : style, styles.tab]}
     >
-      <AppIcon name={isFocused && activeIcon ? activeIcon : icon} size={24} color={tint} />
+      <View style={[styles.circle, isFocused && { backgroundColor: colors.fab }]}>
+        <AppIcon name={isFocused && activeIcon ? activeIcon : icon} size={22} color={isFocused ? colors.fabIcon : colors.tabIconDefault} />
+      </View>
     </Pressable>
   );
 }
@@ -74,18 +72,21 @@ export function AddButton() {
         }}
         accessibilityRole="button"
         accessibilityLabel="Add food"
-        style={({ pressed }) => [styles.fab, shadows.lg, { backgroundColor: colors.fab, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
+        style={({ pressed }) => [styles.fab, shadows.md, { backgroundColor: colors.fab, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
       >
-        <AppIcon name="plus" size={28} color={colors.fabIcon} weight="semibold" />
+        <AppIcon name="plus" size={26} color={colors.fabIcon} weight="semibold" />
       </Pressable>
     </View>
   );
 }
 
-const FAB_SIZE = 64;
+const CIRCLE = 44;
+const FAB_SIZE = 56;
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', paddingTop: Spacing.sm, paddingHorizontal: Spacing.sm },
-  tab: { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 48 },
-  fab: { width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2, alignItems: 'center', justifyContent: 'center', marginTop: -Spacing['2xl'] },
+  container: { flexDirection: 'column', alignItems: 'stretch', paddingTop: Spacing.sm, paddingHorizontal: Spacing.lg, backgroundColor: 'transparent' },
+  pill: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 6, borderRadius: Radii.full, borderWidth: StyleSheet.hairlineWidth },
+  tab: { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: FAB_SIZE },
+  circle: { width: CIRCLE, height: CIRCLE, borderRadius: CIRCLE / 2, alignItems: 'center', justifyContent: 'center' },
+  fab: { width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2, alignItems: 'center', justifyContent: 'center' },
 });

@@ -6,7 +6,7 @@ import { FoodDataAttribution } from '@/components/food/FoodDataAttribution';
 import { FoodSearchRow } from '@/components/food/FoodSearchRow';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { HeaderButton } from '@/components/ui/HeaderButton';
+import { CloseButton } from '@/components/ui/CloseButton';
 import { SearchField } from '@/components/ui/SearchField';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { MEAL_TYPE_META } from '@/constants/nutrition';
@@ -76,8 +76,8 @@ export default function FoodSearchScreen() {
       <Stack.Screen
         options={{
           title: pickRowId ? 'Choose a match' : 'Add Food',
-          headerLeft: pickRowId ? () => <HeaderButton label="Back" onPress={() => router.back()} /> : () => null,
-          headerRight: pickRowId ? undefined : () => <HeaderButton label="Cancel" onPress={() => router.back()} />,
+          headerLeft: pickRowId ? () => <CloseButton back onPress={() => router.back()} /> : () => null,
+          headerRight: pickRowId ? undefined : () => <CloseButton onPress={() => router.back()} />,
           headerTitleAlign: 'center',
         }}
       />
@@ -124,8 +124,13 @@ export default function FoodSearchScreen() {
         keyboardDismissMode="on-drag"
         onEndReached={() => void search.loadMore()}
         onEndReachedThreshold={0.6}
-        ListEmptyComponent={<EmptyState icon="search" title="Search for a food" message="Try “chicken breast”, “banana”, or a brand like “Chobani”." />}
-        ListFooterComponent={<FoodDataAttribution style={styles.attribution} />}
+        ListEmptyComponent={
+          <View>
+            <EmptyState icon="search" title="Search for a food" message="Try “chicken breast”, “banana”, a chain like “Chipotle”, or a brand like “Chobani”." />
+            <FoodDataAttribution style={styles.attribution} />
+          </View>
+        }
+        ListFooterComponent={search.active ? <FoodDataAttribution style={styles.attribution} /> : null}
         contentContainerStyle={styles.list}
       />
     </View>

@@ -1,11 +1,12 @@
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CloseButton } from '@/components/ui/CloseButton';
 import { OptionPicker } from '@/components/ui/OptionPicker';
 import { PillTabs } from '@/components/ui/PillTabs';
 import { TextField } from '@/components/ui/TextField';
@@ -93,6 +94,7 @@ export default function GoalScreen() {
 
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+      <Stack.Screen options={{ headerRight: () => <CloseButton onPress={() => router.back()} />, headerTitleAlign: 'center' }} />
       <Card style={styles.card}>
         <ThemedText variant="headline">Calories per day</ThemedText>
         <View style={styles.goalRow}>

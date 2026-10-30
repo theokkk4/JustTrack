@@ -8,7 +8,7 @@ import { MealTypePicker } from '@/components/food/MealTypePicker';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { HeaderButton } from '@/components/ui/HeaderButton';
+import { CloseButton } from '@/components/ui/CloseButton';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { MEAL_TYPE_META } from '@/constants/nutrition';
 import { Radii, Spacing } from '@/constants/theme';
@@ -53,7 +53,7 @@ export default function OrderBuilderScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ title: config.title, headerLeft: () => null, headerRight: () => <HeaderButton label="Cancel" onPress={() => router.back()} />, headerTitleAlign: 'center' }} />
+      <Stack.Screen options={{ title: config.title, headerLeft: () => null, headerRight: () => <CloseButton onPress={() => router.back()} />, headerTitleAlign: 'center' }} />
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={[styles.summary, shadows.sm, { backgroundColor: colors.surfaceTint, borderColor: colors.border }]}>

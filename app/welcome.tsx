@@ -79,6 +79,6 @@ const styles = StyleSheet.create({
   bottom: { gap: Spacing.md },
   promises: { gap: Spacing.sm, marginBottom: Spacing.lg },
   promise: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  primary: { alignItems: 'center', justifyContent: 'center', borderRadius: Radii.lg, paddingVertical: Spacing.lg, minHeight: 56 },
+  primary: { alignItems: 'center', justifyContent: 'center', borderRadius: Radii.full, paddingVertical: Spacing.lg, minHeight: 56 },
   secondary: { alignItems: 'center', paddingVertical: Spacing.sm },
 });

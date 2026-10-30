@@ -31,7 +31,7 @@ export function Button({
 
   const palette = {
     primary: { bg: colors.text, fg: colors.textInverse, border: 'transparent' },
-    secondary: { bg: colors.backgroundSecondary, fg: colors.text, border: colors.border },
+    secondary: { bg: colors.surfaceTint, fg: colors.text, border: 'transparent' },
     ghost: { bg: 'transparent', fg: colors.text, border: 'transparent' },
     destructive: { bg: colors.danger, fg: colors.textInverse, border: 'transparent' },
     ghostDestructive: { bg: 'transparent', fg: colors.danger, border: 'transparent' },
@@ -72,12 +72,12 @@ const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radii.md,
+    borderRadius: Radii.full,
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: Spacing.sm,
   },
   md: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg },
-  lg: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl },
+  lg: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl, minHeight: 54 },
   fullWidth: { alignSelf: 'stretch' },
 });

@@ -110,7 +110,7 @@ export default function ReviewScreen() {
         amount={state.status === 'ready' && rows.length > 0 ? formatNumber(totals.calories) : null}
         amountCaption={state.status === 'ready' && rows.length > 0 ? 'kcal, estimated' : null}
         imageUri={state.photoUri}
-        badge="ESTIMATED"
+        badge={state.status === 'error' ? null : 'ESTIMATED'}
         onBack={close}
       />
 

@@ -34,7 +34,7 @@ const HEIGHT_OPTIONS: readonly { value: HeightUnit; label: string }[] = [
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { colors, preference, setPreference } = useAppTheme();
+  const { colors, shadows, preference, setPreference } = useAppTheme();
   const settings = useSettings();
   const [name, setName] = useState(settings.displayName ?? '');
   const version = Constants.expoConfig?.version ?? '1.0.0';
@@ -54,10 +54,13 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content}>
-      <GradientHeader>
-        <View style={styles.hero}>
-          <View style={styles.avatar}>
-            <ThemedText variant="title1" style={{ color: colors.onGradient }}>
+      <GradientHeader fadeEnd={0.9}>
+        <ThemedText variant="headline" style={[styles.title, { color: colors.onGradient }]} accessibilityRole="header">
+          Profile
+        </ThemedText>
+        <View style={[styles.hero, shadows.sm, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
+            <ThemedText variant="title1" style={{ color: '#FFFFFF' }}>
               {initial}
             </ThemedText>
           </View>
@@ -67,13 +70,13 @@ export default function ProfileScreen() {
             onBlur={saveName}
             onSubmitEditing={saveName}
             placeholder="Your name"
-            placeholderTextColor={colors.onGradientMuted}
+            placeholderTextColor={colors.textTertiary}
             returnKeyType="done"
             maxLength={40}
             accessibilityLabel="Your name"
-            style={[Typography.title2, styles.nameInput, { color: colors.onGradient }]}
+            style={[Typography.title2, styles.nameInput, { color: colors.text }]}
           />
-          <ThemedText variant="footnote" style={{ color: colors.onGradientMuted }}>
+          <ThemedText variant="footnote" color="secondary" style={styles.hometown}>
             {HOMETOWN_LINE}
           </ThemedText>
         </View>
@@ -127,8 +130,10 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   content: { paddingBottom: Spacing['5xl'] },
-  hero: { alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xl },
-  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
+  title: { textAlign: 'center' },
+  hero: { alignItems: 'center', gap: Spacing.sm, padding: Spacing.xl, marginTop: Spacing.lg, borderRadius: Radii.xl, borderWidth: StyleSheet.hairlineWidth },
+  avatar: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   nameInput: { textAlign: 'center', minWidth: 200, paddingVertical: Spacing.xs, borderRadius: Radii.md },
+  hometown: { textAlign: 'center' },
   body: { paddingHorizontal: Spacing.lg },
 });

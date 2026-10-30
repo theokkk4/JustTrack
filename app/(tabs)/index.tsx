@@ -1,13 +1,12 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { CaloriesLeft } from '@/components/home/CaloriesLeft';
-import { MacroShareRow } from '@/components/home/MacroShareRow';
+import { MacroRings } from '@/components/home/MacroRings';
 import { MealCard } from '@/components/home/MealCard';
 import { WeekStrip } from '@/components/home/WeekStrip';
 import { GradientHeader } from '@/components/layout/GradientHeader';
-import { AppIcon } from '@/components/ui/AppIcon';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { PRIVACY_LINE } from '@/constants/brand';
 import { Spacing } from '@/constants/theme';
@@ -15,7 +14,7 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { useLog } from '@/hooks/useLog';
 import { useSettings } from '@/hooks/useSettings';
-import { formatRelativeDay, isSameDay } from '@/utils/date';
+import { formatRelativeDay, getGreeting, isSameDay } from '@/utils/date';
 
 function initialFor(name: string | null): string {
   return name?.trim().charAt(0).toUpperCase() || 'JT';
@@ -24,7 +23,7 @@ function initialFor(name: string | null): string {
 export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { today } = useCurrentTime();
+  const { now, today } = useCurrentTime();
   const [picked, setPicked] = useState<Date | null>(null);
   // Follow the calendar: once a new day starts, the picked day falls back to today.
   const day = picked && picked <= today ? picked : today;
@@ -34,23 +33,27 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="never">
-      <GradientHeader>
+      <GradientHeader fadeEnd={0.92}>
         <View style={styles.topRow}>
-          <View style={[styles.avatar, { backgroundColor: 'rgba(255,255,255,0.22)' }]} accessible accessibilityLabel={settings.displayName ?? 'Profile'}>
+          <View style={styles.greeting}>
+            <ThemedText variant="footnote" style={{ color: colors.onGradientMuted }}>
+              {isToday ? `${getGreeting(now)}${settings.displayName ? `, ${settings.displayName.split(' ')[0]}` : ''} 👋` : formatRelativeDay(day, today)}
+            </ThemedText>
+            <ThemedText variant="title2" style={{ color: colors.onGradient }} accessibilityRole="header">
+              {isToday ? 'Stay on track today' : day.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </ThemedText>
+          </View>
+          <Pressable onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel={settings.displayName ? `${settings.displayName}, profile` : 'Profile'} style={[styles.avatar, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
             <ThemedText variant="subheadEmphasized" style={{ color: colors.onGradient }}>
               {initialFor(settings.displayName)}
             </ThemedText>
-          </View>
-          <ThemedText variant="headline" style={{ color: colors.onGradient }} accessibilityRole="header">
-            {isToday ? 'Home' : formatRelativeDay(day, today)}
-          </ThemedText>
-          <View style={styles.avatar}>
-            <AppIcon name="calendar" size={18} color={colors.onGradient} />
-          </View>
+          </Pressable>
         </View>
         <WeekStrip today={today} selected={day} onSelect={setPicked} />
         <CaloriesLeft eaten={totals.calories} goal={settings.calorieGoal} />
-        <MacroShareRow totals={totals} onGradient />
+        <View style={styles.rings}>
+          <MacroRings totals={totals} goals={settings.macroGoals} />
+        </View>
       </GradientHeader>
 
       <View style={styles.body}>
@@ -59,9 +62,11 @@ export default function HomeScreen() {
             Daily meals
           </ThemedText>
           {!isToday ? (
-            <ThemedText variant="footnote" color="secondary" onPress={() => setPicked(null)} accessibilityRole="button">
-              Back to today
-            </ThemedText>
+            <Pressable onPress={() => setPicked(null)} accessibilityRole="button" hitSlop={8} style={[styles.todayChip, { backgroundColor: colors.surfaceTint }]}>
+              <ThemedText variant="footnote" style={{ color: colors.accent, fontWeight: '600' }}>
+                Back to today
+              </ThemedText>
+            </Pressable>
           ) : null}
         </View>
 
@@ -81,10 +86,13 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   content: { paddingBottom: Spacing['5xl'] },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md },
+  greeting: { flex: 1, gap: 2 },
+  avatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  rings: { paddingBottom: Spacing.sm },
   body: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
   cards: { gap: Spacing.md },
+  todayChip: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: 999 },
   footnote: { textAlign: 'center', marginTop: Spacing['2xl'], paddingHorizontal: Spacing.lg },
 });

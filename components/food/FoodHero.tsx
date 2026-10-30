@@ -1,10 +1,10 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppIcon } from '@/components/ui/AppIcon';
+import { CloseButton } from '@/components/ui/CloseButton';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { Radii, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
@@ -24,13 +24,15 @@ interface FoodHeroProps {
   tintHints?: (string | null | undefined)[];
   badge?: string | null;
   onBack?: () => void;
+  /** A modal closes with an X; a pushed screen goes back with a chevron. */
+  backIcon?: 'close' | 'back';
 }
 
 /**
  * The top of a food screen: a photo (or a category-tinted gradient) with
  * the food's name and amount set over it, like a magazine cover.
  */
-export function FoodHero({ title, subtitle, amount, amountCaption, imageUri, tintHints = [], badge, onBack }: FoodHeroProps) {
+export function FoodHero({ title, subtitle, amount, amountCaption, imageUri, tintHints = [], badge, onBack, backIcon = 'close' }: FoodHeroProps) {
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const [tintStart, tintEnd] = heroTintFor(...tintHints, title);
@@ -55,9 +57,7 @@ export function FoodHero({ title, subtitle, amount, amountCaption, imageUri, tin
 
       <View style={[styles.topBar, { paddingTop: insets.top + Spacing.sm }]}>
         {onBack ? (
-          <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.75)' }]}>
-            <AppIcon name="chevronLeft" size={18} color={ink} weight="semibold" />
-          </Pressable>
+          <CloseButton onPress={onBack} onPhoto back={backIcon === 'back'} />
         ) : (
           <View style={styles.backButton} />
         )}
