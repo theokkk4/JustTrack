@@ -14,11 +14,11 @@ export interface AppIconProps {
 
 /**
  * Non-iOS fallback (Ionicons). iOS resolves AppIcon.ios.tsx instead and
- * renders real SF Symbols, which also keeps the Ionicons font out of the
- * iOS bundle.
+ * renders real SF Symbols. Icons are decorative: the control they sit in
+ * carries the label, so assistive tech skips the glyph itself.
  */
 export function AppIcon({ name, size = 24, color }: AppIconProps) {
-  return <Ionicons name={AppIcons[name].ionicon} size={size} color={color} />;
+  return <Ionicons name={AppIcons[name].ionicon} size={size} color={color} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden />;
 }
 
 export type { AppIconName };

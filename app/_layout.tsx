@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { PhoneFrame } from '@/components/layout/PhoneFrame';
 import { StoreGate } from '@/components/StoreGate';
+import { ActionSheetHost } from '@/components/ui/ActionSheetHost';
 import { ThemeProvider, useAppTheme } from '@/contexts/ThemeContext';
 import { useSettings } from '@/hooks/useSettings';
 
@@ -24,6 +25,7 @@ export default function RootLayout() {
           <StoreGate>
             <PhoneFrame>
               <RootNavigator />
+              <ActionSheetHost />
             </PhoneFrame>
           </StoreGate>
         </ThemeProvider>

@@ -14,6 +14,12 @@ import { liveEntries, msUntilNextExpiry } from '@/lib/log/window';
 export function useLog() {
   const all = useSyncExternalStore(logStore.subscribe, logStore.getSnapshot, logStore.getSnapshot);
   const [now, setNow] = useState(() => Date.now());
+  // A fresh entry is logged after this render's `now`; move the clock up so it shows at once.
+  const [seen, setSeen] = useState(all);
+  if (seen !== all) {
+    setSeen(all);
+    setNow(Date.now());
+  }
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {

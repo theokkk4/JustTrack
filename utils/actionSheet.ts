@@ -1,6 +1,44 @@
 import * as Haptics from 'expo-haptics';
 import { ActionSheetIOS, Alert, Platform } from 'react-native';
 
+/**
+ * Pickers and menus. iOS gets its native action sheet; everywhere else the
+ * ActionSheetHost (mounted at the root) draws a bottom sheet from `sheetStore`.
+ */
+
+export interface SheetOption {
+  label: string;
+  destructive?: boolean;
+  selected?: boolean;
+  onPress: () => void;
+}
+
+export interface SheetState {
+  title?: string;
+  message?: string;
+  options: SheetOption[];
+}
+
+let current: SheetState | null = null;
+const listeners = new Set<() => void>();
+
+function present(sheet: SheetState | null) {
+  current = sheet;
+  listeners.forEach((listener) => listener());
+}
+
+export const sheetStore = {
+  getSnapshot: () => current,
+  subscribe: (listener: () => void) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  },
+};
+
+export function dismissSheet(): void {
+  present(null);
+}
+
 interface OptionSheetConfig<T extends string> {
   title: string;
   options: readonly { value: T; label: string }[];
@@ -8,7 +46,7 @@ interface OptionSheetConfig<T extends string> {
   onSelect: (value: T) => void;
 }
 
-/** Native iOS action sheet for picking one value; plain Alert elsewhere. */
+/** Pick one value from a short list. */
 export function showOptionSheet<T extends string>({ title, options, selected, onSelect }: OptionSheetConfig<T>) {
   const currentLabel = options.find((option) => option.value === selected)?.label;
   const choose = (value: T) => {
@@ -32,10 +70,7 @@ export function showOptionSheet<T extends string>({ title, options, selected, on
     return;
   }
 
-  Alert.alert(title, currentLabel ? `Currently: ${currentLabel}` : undefined, [
-    ...options.map((option) => ({ text: option.label, onPress: () => choose(option.value) })),
-    { text: 'Cancel', style: 'cancel' as const },
-  ]);
+  present({ title, options: options.map((option) => ({ label: option.label, selected: option.value === selected, onPress: () => choose(option.value) })) });
 }
 
 export interface MenuAction {
@@ -44,7 +79,7 @@ export interface MenuAction {
   onPress: () => void;
 }
 
-/** A native iOS action sheet of commands (e.g. a long-press menu). Elsewhere, an Alert. */
+/** A menu of commands (e.g. a long-press menu). */
 export function showActionMenu({ title, actions }: { title?: string; actions: readonly MenuAction[] }) {
   if (Platform.OS === 'ios') {
     const destructiveIndex = actions.findIndex((action) => action.destructive);
@@ -59,10 +94,7 @@ export function showActionMenu({ title, actions }: { title?: string; actions: re
     );
     return;
   }
-  Alert.alert(title ?? '', undefined, [
-    ...actions.map((action) => ({ text: action.label, style: action.destructive ? ('destructive' as const) : undefined, onPress: action.onPress })),
-    { text: 'Cancel', style: 'cancel' as const },
-  ]);
+  present({ title, options: actions.map((action) => ({ label: action.label, destructive: action.destructive, onPress: action.onPress })) });
 }
 
 /**

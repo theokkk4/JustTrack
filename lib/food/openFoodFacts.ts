@@ -4,12 +4,14 @@ import { REPOSITORY_URL } from '@/constants/brand';
 import type { FoodDetail, FoodServing, MetricUnit } from '@/types';
 
 /**
- * Open Food Facts: a free, open database of packaged foods (ODbL). No API key;
- * the app calls it directly, so each user's requests count against their own
- * rate limit rather than a shared server's.
+ * Open Food Facts: a free, open database of packaged foods (ODbL). No API key.
+ * Product lookups go straight to OFF. Search goes through the app's own
+ * /api/foods on the web (OFF's search host sends no CORS headers) and straight
+ * to OFF on native.
  */
 
 const SEARCH_URL = 'https://search.openfoodfacts.org/search';
+const PROXY_SEARCH_URL = `${process.env.EXPO_PUBLIC_API_BASE_URL ?? ''}/api/foods`;
 const PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product';
 const FIELDS = 'code,product_name,brands,nutriments,serving_size,serving_quantity,serving_quantity_unit,image_front_url';
 export const OFF_PAGE_SIZE = 20;
@@ -102,8 +104,11 @@ async function getJson(url: string, signal?: AbortSignal): Promise<unknown> {
 
 /** Searches packaged foods. `page` starts at 1. */
 export async function searchOpenFoodFacts(query: string, page = 1, signal?: AbortSignal): Promise<OffSearchPage> {
-  const params = new URLSearchParams({ q: query, page: String(page), page_size: String(OFF_PAGE_SIZE), fields: FIELDS });
-  const body = (await getJson(`${SEARCH_URL}?${params}`, signal)) as { hits?: OffProduct[]; page_count?: number } | null;
+  const url =
+    Platform.OS === 'web'
+      ? `${PROXY_SEARCH_URL}?${new URLSearchParams({ q: query, page: String(page) })}`
+      : `${SEARCH_URL}?${new URLSearchParams({ q: query, page: String(page), page_size: String(OFF_PAGE_SIZE), fields: FIELDS })}`;
+  const body = (await getJson(url, signal)) as { hits?: OffProduct[]; page_count?: number } | null;
   const foods = (body?.hits ?? []).map(normalizeOffProduct).filter((food): food is FoodDetail => food !== null);
   return { foods, page, pageCount: typeof body?.page_count === 'number' ? body.page_count : page };
 }

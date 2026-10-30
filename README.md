@@ -2,47 +2,57 @@
 
 **Track food. Track progress. Just Track.**
 
-JustTrack is a free, open-source calorie and macro tracker for iPhone, built for speed: open the app, scan or search, confirm, done. No ads, no subscriptions, no analytics.
+A free calorie and macro tracker made in Philadelphia for college students — and anyone else. No account, no ads, no subscription. Your log lives on your device and clears itself 24 hours after each entry; nothing is uploaded.
 
-> **Status:** early development. Accounts (email + Sign in with Apple), onboarding with personalized calorie targets, and the secured database are in place; food search and scanning are being built next.
+- **Snap your meal.** Photograph your plate and an AI estimate names what's on it and sizes the portions. You review and fix it before anything is logged, and it's always labeled *Estimated*.
+- **Scan a barcode** for packaged foods (Open Food Facts).
+- **Search** 5,000+ everyday foods with real portions ("1 cup", "1 medium") from the USDA database that ships inside the app — instant and offline.
+- A daily calorie goal, by hand or estimated from a few body stats, optional macro targets, and a *Today* view with a balance score and calories by meal.
 
-## Stack
+Open source under the MIT license.
 
-- [Expo](https://expo.dev) (SDK 57) + React Native + TypeScript
-- [Expo Router](https://docs.expo.dev/router/introduction/) for navigation
-- [Supabase](https://supabase.com) for auth, Postgres, and Edge Functions
-- [EAS Build / Submit](https://docs.expo.dev/eas/) for iOS builds and TestFlight — no local Xcode required
-
-## Development
+## Run it
 
 ```bash
 npm install
-cp .env.example .env   # then fill in your Supabase URL and anon key
-npx expo start
+npx expo start          # press w for the browser, or scan the QR code with Expo Go on your phone
 ```
 
-Scan the QR code with your iPhone camera to open the app in Expo Go.
+That's it for the app — it needs no keys. The photo scanner needs one server-side key (see Deploying).
 
 ```bash
-npm run typecheck   # tsc --noEmit
-npm run lint        # expo lint
-npm test            # jest
+npm run typecheck       # tsc --noEmit
+npm run lint            # expo lint
+npm test                # jest
 ```
 
-## Project layout
+## How it works
 
-```text
-app/            Screens and navigation (Expo Router)
-components/     UI kit (ui/), food, nutrition, scanner, navigation
-constants/      Design tokens, icons, brand, nutrition defaults
-contexts/       Theme, preferences, diary state
-hooks/          Data and utility hooks
-lib/            Supabase client, nutrition math, API wrappers
-services/       App-level data logic
-utils/          Formatting, dates, units
-supabase/       Database migrations and Edge Functions
-```
+| Piece | Where |
+| --- | --- |
+| Screens (Expo Router) | `app/` — tabs: Home, Today, Scan, Profile; modals for Add Food, Edit Entry, Scan Review, Barcode, Goal |
+| The 24-hour log and settings | `lib/log/`, `lib/settings/` — in-memory stores mirrored to on-device storage (`localStorage` on the web) |
+| Nutrition math | `lib/nutrition/` — portion scaling, calorie targets (Mifflin–St Jeor), the balance score |
+| Food data | `lib/food/` — the bundled USDA database with its ranking, Open Food Facts, category tints |
+| Photo scan | `hooks/useMealScan.ts` → `lib/scan/` → `api/analyze-meal.ts` |
+| Server functions (Vercel) | `api/analyze-meal.ts` (AI estimate, holds the key), `api/foods.ts` (packaged-food search proxy) |
 
-## License
+The USDA data is public domain (FoodData Central, FNDDS). Rebuild `assets/data/usda-foods.json` from a newer release with `node scripts/build-food-database.js path/to/surveyDownload.json`. Open Food Facts data is ODbL; the app credits both wherever food data is shown.
 
-[MIT](LICENSE). Note that the app's source is open, but third-party data it uses (such as the food database) is subject to its providers' own terms.
+## Deploying (Vercel)
+
+The web app and its two functions deploy together from this repository.
+
+1. Import the repository on [vercel.com](https://vercel.com/new). `vercel.json` already sets the build (`npx expo export --platform web` → `dist/`).
+2. In the project's **Settings → Environment Variables**, add `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`, default `claude-fable-5-1`). Without it the photo scanner shows "isn't set up on this server yet"; everything else works.
+3. Deploy. Open the URL on your phone — add it to the home screen for an app-like feel.
+
+The key never ships in the app: `api/analyze-meal.ts` is the only code that sees it. Photos are sent to the model for analysis and not stored. The function rate-limits per address; for a public launch, add Vercel's firewall rate limiting as well.
+
+## iOS
+
+The same code builds as a native iOS app with EAS (`eas build --platform ios`). A native build needs `EXPO_PUBLIC_API_BASE_URL` set to the deployed web URL so it can reach the functions; the barcode scanner on iOS is still to come (the web scanner uses the browser camera).
+
+## Privacy
+
+There is no account and no analytics. The log is stored only on the device and entries are dropped 24 hours after they're logged. Meal photos are sent to the analysis function and are not kept. See `app/(tabs)/profile.tsx` for what the app tells users.
