@@ -27,7 +27,7 @@ export const subway: BuilderConfig = {
     {
       id: 'protein',
       title: 'Protein',
-      hint: 'Tap twice for double.',
+      hint: 'Tap 2× for double.',
       mode: 'many',
       options: [
         one('turkey', 'Oven-Roasted Turkey', '68267665', true),

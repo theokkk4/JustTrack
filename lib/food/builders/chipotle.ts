@@ -27,7 +27,7 @@ export const chipotle: BuilderConfig = {
     {
       id: 'protein',
       title: 'Protein',
-      hint: 'Tap twice for double.',
+      hint: 'Tap 2× for double.',
       mode: 'many',
       options: [
         one('chicken', 'Chicken', '52051', true),

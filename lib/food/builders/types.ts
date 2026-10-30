@@ -92,19 +92,24 @@ export function nutritionOf(config: BuilderConfig, selection: Selection): Nutrit
   return sumNutrition(parts);
 }
 
-/** Toggle an option: pick it, make it double if it can be, then clear it. One-of steps swap instead. */
+/** Toggle an option: pick it or clear it. One-of steps swap instead. Doubling is setCount's job. */
 export function toggle(selection: Selection, step: BuilderStep, option: BuilderOption): Selection {
   const current = selection[option.id] ?? 0;
   const next = { ...selection };
   if (step.mode === 'one') {
     step.options.forEach((other) => delete next[other.id]);
-    next[option.id] = current === 1 && option.doubleable ? 2 : 1;
+    next[option.id] = current || 1;
     return next;
   }
   if (current === 0) next[option.id] = 1;
-  else if (current === 1 && option.doubleable) next[option.id] = 2;
   else delete next[option.id];
   return next;
+}
+
+/** Single or double of a picked option ("Double chicken" is a real order). */
+export function setCount(selection: Selection, option: BuilderOption, count: 1 | 2): Selection {
+  if (!selection[option.id]) return selection;
+  return { ...selection, [option.id]: option.doubleable ? count : 1 };
 }
 
 /** The picked options of a step, as lowercase labels ("double steak", "cheese"). */

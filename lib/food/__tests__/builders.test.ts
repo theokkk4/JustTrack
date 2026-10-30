@@ -1,4 +1,5 @@
-import { builderByKey, builderForChain, entryOf, nutritionOf, toggle, type BuilderConfig } from '../builders';
+import { builderByKey, builderForChain, entryOf, nutritionOf, setCount, toggle, type BuilderConfig } from '../builders';
+import { ingredientsOf, shapeOf } from '../builders/visual';
 import { jerseyMikesSubs } from '../builders/jerseyMikes';
 import { getChainFood } from '../chainDatabase';
 
@@ -27,18 +28,37 @@ describe('order builders', () => {
     }
   });
 
-  it('swap one-of picks, stack doubles, and clear on the third tap', () => {
+  it('swaps one-of picks, clears on the second tap, and doubles through setCount', () => {
     const chipotle = builderByKey('chipotle')!;
     let selection = toggle(chipotle.defaultSelection, step(chipotle, 'rice'), option(chipotle, 'rice', 'brown'));
     expect(selection.white).toBeUndefined();
     expect(selection.brown).toBe(1);
-    selection = toggle(selection, step(chipotle, 'protein'), option(chipotle, 'protein', 'chicken'));
+    selection = setCount(selection, option(chipotle, 'protein', 'chicken'), 2);
     expect(selection.chicken).toBe(2);
+    selection = setCount(selection, option(chipotle, 'protein', 'chicken'), 1);
+    expect(selection.chicken).toBe(1);
     selection = toggle(selection, step(chipotle, 'protein'), option(chipotle, 'protein', 'chicken'));
     expect(selection.chicken).toBeUndefined();
+    // Not picked: nothing to double. Not doubleable: stays single.
+    expect(setCount(selection, option(chipotle, 'protein', 'steak'), 2).steak).toBeUndefined();
     selection = toggle(selection, step(chipotle, 'toppings'), option(chipotle, 'toppings', 'cheese'));
+    expect(setCount(selection, option(chipotle, 'toppings', 'cheese'), 2).cheese).toBe(1);
     selection = toggle(selection, step(chipotle, 'toppings'), option(chipotle, 'toppings', 'cheese'));
     expect(selection.cheese).toBeUndefined();
+  });
+
+  it('draws the order: shape from the base, ingredients from the picks, beds first', () => {
+    const chipotle = builderByKey('chipotle')!;
+    const bowl = { ...chipotle.defaultSelection, guac: 1, 'tomato-salsa': 1, chicken: 2 };
+    expect(shapeOf(chipotle, bowl)).toBe('bowl');
+    expect(shapeOf(chipotle, { ...bowl, bowl: 0, burrito: 1 })).toBe('wrap');
+    expect(shapeOf(chipotle, { ...bowl, bowl: 0, 'tacos-soft': 1 })).toBe('tacos');
+    const layers = ingredientsOf(chipotle, bowl);
+    expect(layers.map((layer) => layer.id)).toEqual(['white', 'guac', 'chicken', 'black', 'tomato-salsa']);
+    expect(layers.find((layer) => layer.id === 'chicken')?.count).toBe(2);
+    const subway = builderByKey('subway')!;
+    expect(shapeOf(subway, { ...subway.defaultSelection, wrap: 1, italian: 0 })).toBe('wrap');
+    expect(shapeOf(builderByKey('panda')!, {})).toBe('plate');
   });
 });
 

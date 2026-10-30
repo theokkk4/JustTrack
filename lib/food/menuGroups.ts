@@ -48,3 +48,25 @@ export function groupMenu<T>(items: readonly T[], nameOf: (item: T) => string): 
     data: [...(buckets.get(group) ?? [])].sort((a, b) => nameOf(a).localeCompare(nameOf(b))),
   }));
 }
+
+const GROUP_EMOJI: Record<string, string> = {
+  Burgers: '🍔',
+  Sandwiches: '🥪',
+  'Tacos & Burritos': '🌮',
+  Pizza: '🍕',
+  Wings: '🍗',
+  Entrees: '🍽️',
+  'Bowls & Salads': '🥗',
+  Breakfast: '🍳',
+  Soups: '🍲',
+  Sides: '🍟',
+  Desserts: '🍰',
+  Drinks: '🥤',
+  Kids: '🧒',
+  Menu: '📋',
+  Results: '🔎',
+};
+
+export function groupEmoji(title: string): string {
+  return GROUP_EMOJI[title] ?? '🍽️';
+}

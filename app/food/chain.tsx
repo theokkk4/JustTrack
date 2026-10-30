@@ -15,7 +15,7 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { builderForChain } from '@/lib/food/builders';
 import { chainRows, chainRowToFood, searchChainFoods } from '@/lib/food/chainDatabase';
-import { groupMenu } from '@/lib/food/menuGroups';
+import { groupEmoji, groupMenu } from '@/lib/food/menuGroups';
 import { matchRowToFood } from '@/lib/scan/reviewStore';
 import type { FoodDetail } from '@/types';
 import { defaultMealType } from '@/utils/mealTime';
@@ -103,7 +103,7 @@ export default function ChainMenuScreen() {
         renderSectionHeader={({ section }) => (
           <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
             <ThemedText variant="footnote" color="secondary" style={styles.sectionTitle}>
-              {section.title.toUpperCase()}
+              {groupEmoji(section.title)}  {section.title.toUpperCase()}
             </ThemedText>
           </View>
         )}

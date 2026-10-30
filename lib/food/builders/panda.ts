@@ -37,7 +37,7 @@ export const panda: BuilderConfig = {
     {
       id: 'entrees',
       title: 'Entrées',
-      hint: 'One for a bowl, two for a plate, three for a bigger plate. Tap twice for a double portion.',
+      hint: 'One for a bowl, two for a plate, three for a bigger plate. Tap 2× for a double portion.',
       mode: 'many',
       options: [
         one('orange', 'Orange Chicken', '4532802', true),
