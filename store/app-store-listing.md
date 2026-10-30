@@ -7,14 +7,14 @@ Everything to fill in at appstoreconnect.apple.com. Copy the text as is; charact
 | File | Use in App Store Connect |
 | --- | --- |
 | `icon-1024.png` | Not uploaded separately: the icon comes from the build (`assets/justtrack.icon` + `assets/images/icon.png`). Keep it here for the listing preview and press use. |
-| `screenshots/iphone-6.9/01…06.png` | App Store → iOS App → Screenshots → **iPhone 6.9" Display** (1320 × 2868). Upload in numbered order. Apple scales this one set for every other iPhone size. |
+| `screenshots/iphone-6.9/01…07.png` | App Store → iOS App → Screenshots → **iPhone 6.9" Display** (1320 × 2868). Upload in numbered order. Apple scales this one set for every other iPhone size. |
 
 ## App Information
 
 | Field | Value |
 | --- | --- |
 | Name (30) | `JustTrack` |
-| Subtitle (30) | `Snap food. Know your calories.` |
+| Subtitle (30) | `Free, open source, no ads` |
 | Bundle ID | `com.theokkk4.justtrack` |
 | SKU | `justtrack-ios` |
 | Primary language | English (U.S.) |
@@ -30,13 +30,13 @@ Everything to fill in at appstoreconnect.apple.com. Copy the text as is; charact
 **Promotional text (170)**
 
 ```
-Free calorie tracking with no account and no ads. Snap a photo, pick from 20 fast-food menus, or build your Chipotle bowl. Your data stays on your phone.
+The free, open-source calorie tracker. No account, no ads, no subscription. Snap a photo, pick from 20 fast-food menus, or build your Chipotle bowl. Data stays on your phone.
 ```
 
 **Description (4000)**
 
 ```
-JustTrack is the calorie tracker that gets out of your way. No account, no ads, no subscription. Everything you log stays on your phone.
+JustTrack is the free, open-source calorie tracker. No account, no ads, no subscription, no paywall. The code is public, so anyone can see exactly what the app does with their data: nothing.
 
 SNAP YOUR FOOD
 Take a photo of your plate and JustTrack estimates each food on it: what it is, how much, and the calories, protein, carbs, and fat. Adjust the grams, swap anything for an exact database entry, and log it in one tap. Estimates are labelled so you always know what's measured and what's approximate.
@@ -56,19 +56,22 @@ See calories left, protein, carbs, and fat at a glance. Browse any day of the we
 PRIVATE BY DESIGN
 There is no sign-up. Your log, goals, and name are stored only on your device. Meal photos are analysed and not kept. No analytics, no tracking, no ads.
 
+FREE AND OPEN SOURCE
+Other trackers charge a subscription for photo logging and hide your data behind an account. JustTrack is free, every feature is included, and the source code is public on GitHub (github.com/theokkk4/JustTrack). Read it, improve it, or build it yourself.
+
 Made in Philadelphia for college students, and free for everyone.
 ```
 
 **Keywords (100, comma-separated, no spaces after commas)**
 
 ```
-calorie counter,food tracker,macro,diet,chipotle,fast food,nutrition,photo calories,meal log,weight
+calorie counter,free,open source,food tracker,macro,diet,chipotle,fast food,nutrition,photo,meal log
 ```
 
 **What's New (first release)**
 
 ```
-First release. Snap a photo to log a meal, search 20 fast-food menus, build your Chipotle, Subway, Panda Express, or Jersey Mike's order, and track calories and macros without an account.
+First release. Free and open source. Snap a photo to log a meal, search 20 fast-food menus, build your Chipotle, Subway, Panda Express, or Jersey Mike's order, and track calories and macros without an account.
 ```
 
 | Field | Value |
